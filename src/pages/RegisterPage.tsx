@@ -12,31 +12,36 @@ export function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+async function handleSubmit(event: FormEvent) {
+  event.preventDefault();
 
-    setError("");
-    setLoading(true);
+  setError("");
+  setLoading(true);
 
-    try {
-      await authService.register({ email, password });
-      navigate("/login");
-    } catch (error: any) {
-      console.log("Register error:", error.response?.data);
+  try {
+    await authService.register({ email, password });
 
-      const message = error.response?.data?.message;
+    const loginResponse = await authService.login({ email, password });
 
-      if (Array.isArray(message)) {
-        setError(message.join(" - "));
-      } else if (message) {
-        setError(message);
-      } else {
-        setError("No se pudo crear la cuenta.");
-      }
-    } finally {
-      setLoading(false);
+    localStorage.setItem("accessToken", loginResponse.accessToken);
+
+    navigate("/home");
+  } catch (error: any) {
+    console.log("Register error:", error.response?.data);
+
+    const message = error.response?.data?.message;
+
+    if (Array.isArray(message)) {
+      setError(message.join(" - "));
+    } else if (message) {
+      setError(message);
+    } else {
+      setError("No se pudo crear la cuenta.");
     }
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <main

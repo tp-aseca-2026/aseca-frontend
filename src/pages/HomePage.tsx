@@ -1,0 +1,781 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { api } from "../api/axios";
+
+type Transaction = {
+  id?: number;
+  ticker: string;
+  quantity: number;
+  type?: "BUY" | "SELL";
+  createdAt?: string;
+  price?: number;
+};
+
+type PriceSnapshot = {
+  ticker: string;
+  price?: number;
+  lastPrice?: number;
+  closePrice?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  timestamp?: string;
+};
+
+const mockSummary = {
+  totalValue: 12450.8,
+  totalPnL: 820.35,
+  totalPnLPercent: 7.04,
+  positionsCount: 6,
+};
+
+const mockPositions = [
+  {
+    ticker: "AAPL",
+    companyName: "Apple Inc.",
+    quantity: 10,
+    avgBuyPrice: 180,
+    currentPrice: 192.5,
+    pnlPercent: 6.94,
+  },
+  {
+    ticker: "MSFT",
+    companyName: "Microsoft Corp.",
+    quantity: 5,
+    avgBuyPrice: 410,
+    currentPrice: 398.2,
+    pnlPercent: -2.88,
+  },
+  {
+    ticker: "NVDA",
+    companyName: "NVIDIA Corp.",
+    quantity: 3,
+    avgBuyPrice: 880,
+    currentPrice: 942.1,
+    pnlPercent: 7.05,
+  },
+];
+
+const mockWatchlist = ["AAPL", "NVDA", "MSFT", "GOOGL"];
+
+function money(value: number) {
+  return `USD ${value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function getSnapshotDate(snapshots: PriceSnapshot[]) {
+  if (!snapshots.length) return "Sin actualización registrada";
+
+  const first = snapshots[0];
+  const rawDate = first.updatedAt || first.createdAt || first.timestamp;
+
+  if (!rawDate) return "Sin timestamp disponible";
+
+  return new Date(rawDate).toLocaleString("es-AR");
+}
+
+export function HomePage() {
+  const navigate = useNavigate();
+
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [snapshots, setSnapshots] = useState<PriceSnapshot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    loadDashboardData();
+  }, []);
+
+  async function loadDashboardData() {
+    try {
+      const [transactionsResponse, snapshotsResponse] = await Promise.allSettled([
+        api.get<Transaction[]>("/transactions"),
+        api.get<PriceSnapshot[]>("/price-snapshots/latest"),
+      ]);
+
+      if (transactionsResponse.status === "fulfilled") {
+        setTransactions(transactionsResponse.value.data);
+      }
+
+      if (snapshotsResponse.status === "fulfilled") {
+        setSnapshots(snapshotsResponse.value.data);
+      }
+    } catch (error) {
+      console.log("Dashboard error:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("accessToken");
+    navigate("/login");
+  }
+
+  return (
+    <>
+      <style>
+        {`
+          @keyframes fadeUp {
+            from {
+              opacity: 0;
+              transform: translateY(14px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes tickerMove {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+          }
+        `}
+      </style>
+
+      <main
+        style={{
+          width: "100vw",
+          minHeight: "100vh",
+          background: "#060a0f",
+          color: "#e8edf3",
+          fontFamily: "Inter, system-ui, sans-serif",
+          position: "relative",
+          overflowX: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundImage:
+              "linear-gradient(rgba(0,230,118,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(0,230,118,0.035) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            position: "fixed",
+            width: 640,
+            height: 640,
+            borderRadius: "50%",
+            background: "rgba(0,230,118,0.08)",
+            filter: "blur(120px)",
+            top: -240,
+            left: -180,
+            pointerEvents: "none",
+          }}
+        />
+
+        <section
+          style={{
+            position: "relative",
+            zIndex: 1,
+            padding: "36px 56px 56px",
+          }}
+        >
+          <header
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 42,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: "#00e676",
+                  color: "#060a0f",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  fontSize: 14,
+                }}
+              >
+                $P
+              </div>
+
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 25,
+                  fontFamily: "Georgia, serif",
+                  color: "#e8edf3",
+                }}
+              >
+                Stock
+                <span style={{ color: "#00e676", fontWeight: 700 }}>
+                  Folio
+                </span>
+              </p>
+            </div>
+
+            <nav
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 22,
+                color: "#7b8495",
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              <span>Portfolio</span>
+              <span>Transacciones</span>
+              <span>Buscar empresa</span>
+              <span>Watchlist</span>
+
+              <button
+                onClick={logout}
+                style={{
+                  border: "1px solid #243044",
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.03)",
+                  color: "#e8edf3",
+                  padding: "10px 14px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Cerrar sesión
+              </button>
+            </nav>
+          </header>
+
+          <section
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.25fr 0.75fr",
+              gap: 28,
+              alignItems: "stretch",
+              marginBottom: 28,
+              animation: "fadeUp 0.45s ease both",
+            }}
+          >
+            <div
+              style={{
+                border: "1px solid #162235",
+                borderRadius: 28,
+                padding: 34,
+                background:
+                  "linear-gradient(135deg, rgba(0,230,118,0.09), rgba(255,255,255,0.025))",
+                minHeight: 260,
+              }}
+            >
+              <p
+                style={{
+                  margin: "0 0 18px",
+                  color: "#00e676",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.2em",
+                  fontSize: 12,
+                  fontWeight: 800,
+                }}
+              >
+                Dashboard
+              </p>
+
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 54,
+                  lineHeight: 1.05,
+                  fontFamily: "Georgia, serif",
+                  fontWeight: 400,
+                  color: "#f3f6fb",
+                  maxWidth: 720,
+                }}
+              >
+                Estado actual de tu{" "}
+                <span style={{ color: "#00e676", fontWeight: 700 }}>
+                  portfolio
+                </span>
+              </h1>
+
+              <p
+                style={{
+                  margin: "22px 0 0",
+                  color: "#7b8495",
+                  fontSize: 17,
+                  lineHeight: 1.7,
+                  maxWidth: 620,
+                }}
+              >
+                Resumen de posiciones, precios almacenados, P&L y últimas
+                operaciones registradas.
+              </p>
+
+              <p
+                style={{
+                  margin: "28px 0 0",
+                  color: "#536079",
+                  fontSize: 14,
+                }}
+              >
+                Última actualización de precios:{" "}
+                <span style={{ color: "#e8edf3", fontWeight: 700 }}>
+                  {getSnapshotDate(snapshots)}
+                </span>
+              </p>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid #162235",
+                borderRadius: 28,
+                padding: 28,
+                background: "#0c1017",
+              }}
+            >
+              <p
+                style={{
+                  margin: "0 0 10px",
+                  color: "#7b8495",
+                  fontSize: 14,
+                }}
+              >
+                Valor total del portfolio
+              </p>
+
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: 42,
+                  color: "#f3f6fb",
+                }}
+              >
+                {money(mockSummary.totalValue)}
+              </h2>
+
+              <div
+                style={{
+                  marginTop: 22,
+                  padding: 18,
+                  borderRadius: 18,
+                  background: "rgba(0,230,118,0.08)",
+                  border: "1px solid rgba(0,230,118,0.18)",
+                }}
+              >
+                <p style={{ margin: 0, color: "#00e676", fontWeight: 800 }}>
+                  + {money(mockSummary.totalPnL)}
+                </p>
+                <p style={{ margin: "6px 0 0", color: "#7b8495" }}>
+                  +{mockSummary.totalPnLPercent}% total
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 18,
+              marginBottom: 28,
+            }}
+          >
+            <MetricCard title="Valor actual" value={money(mockSummary.totalValue)} />
+            <MetricCard
+              title="Ganancia / pérdida"
+              value={`+${mockSummary.totalPnLPercent}%`}
+              positive
+            />
+            <MetricCard
+              title="Posiciones"
+              value={`${mockSummary.positionsCount}`}
+              subtitle="acciones activas"
+            />
+            <MetricCard
+              title="Snapshots"
+              value={`${snapshots.length || 0}`}
+              subtitle="precios guardados"
+            />
+          </section>
+
+          <section
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.35fr 0.65fr",
+              gap: 28,
+              alignItems: "start",
+            }}
+          >
+            <div
+              style={{
+                border: "1px solid #162235",
+                borderRadius: 28,
+                background: "#0c1017",
+                overflow: "hidden",
+              }}
+            >
+              <SectionHeader
+                title="Mis posiciones"
+                actionText="+ Registrar compra"
+              />
+
+              <div style={{ padding: 24 }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                  }}
+                >
+                  <thead>
+                    <tr>
+                      {[
+                        "Ticker",
+                        "Cantidad",
+                        "Precio compra",
+                        "Precio actual",
+                        "P&L",
+                        "Acciones",
+                      ].map((header) => (
+                        <th
+                          key={header}
+                          style={{
+                            textAlign: "left",
+                            color: "#536079",
+                            fontSize: 12,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.12em",
+                            paddingBottom: 16,
+                          }}
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {mockPositions.map((position) => {
+                      const positive = position.pnlPercent >= 0;
+
+                      return (
+                        <tr key={position.ticker}>
+                          <td style={tdStyle}>
+                            <strong style={{ color: "#e8edf3" }}>
+                              {position.ticker}
+                            </strong>
+                            <p style={{ margin: "4px 0 0", color: "#536079" }}>
+                              {position.companyName}
+                            </p>
+                          </td>
+
+                          <td style={tdStyle}>{position.quantity}</td>
+
+                          <td style={tdStyle}>{money(position.avgBuyPrice)}</td>
+
+                          <td style={tdStyle}>{money(position.currentPrice)}</td>
+
+                          <td
+                            style={{
+                              ...tdStyle,
+                              color: positive ? "#00e676" : "#ff5370",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {positive ? "+" : ""}
+                            {position.pnlPercent}%
+                          </td>
+
+                          <td style={tdStyle}>
+                            <button style={smallButton}>Comprar</button>
+                            <button style={smallGhostButton}>Vender</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gap: 22 }}>
+              <div
+                style={{
+                  border: "1px solid #162235",
+                  borderRadius: 28,
+                  background: "#0c1017",
+                  padding: 24,
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 18px",
+                    color: "#e8edf3",
+                    fontSize: 20,
+                    fontWeight: 800,
+                  }}
+                >
+                  Acciones rápidas
+                </p>
+
+                <div style={{ display: "grid", gap: 12 }}>
+                  <button style={quickButton}>+ Registrar compra</button>
+                  <button style={quickButton}>− Registrar venta</button>
+                  <button style={quickButton}>Buscar empresa en EDGAR</button>
+                  <button style={quickButton}>Actualizar precios</button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  border: "1px solid #162235",
+                  borderRadius: 28,
+                  background: "#0c1017",
+                  padding: 24,
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 8px",
+                    color: "#e8edf3",
+                    fontSize: 20,
+                    fontWeight: 800,
+                  }}
+                >
+                  Watchlist
+                </p>
+
+                <p
+                  style={{
+                    margin: "0 0 18px",
+                    color: "#536079",
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Mock temporal hasta implementar el módulo en backend.
+                </p>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {mockWatchlist.map((ticker) => (
+                    <span
+                      key={ticker}
+                      style={{
+                        padding: "8px 12px",
+                        borderRadius: 999,
+                        background: "rgba(0,230,118,0.08)",
+                        border: "1px solid rgba(0,230,118,0.18)",
+                        color: "#00e676",
+                        fontWeight: 800,
+                        fontSize: 13,
+                      }}
+                    >
+                      {ticker}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section
+            style={{
+              marginTop: 28,
+              border: "1px solid #162235",
+              borderRadius: 28,
+              background: "#0c1017",
+              overflow: "hidden",
+            }}
+          >
+            <SectionHeader title="Últimas transacciones" />
+
+            <div style={{ padding: 24 }}>
+              {loading ? (
+                <p style={{ color: "#7b8495" }}>Cargando operaciones...</p>
+              ) : transactions.length === 0 ? (
+                <p style={{ color: "#7b8495" }}>
+                  Todavía no hay transacciones registradas.
+                </p>
+              ) : (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {transactions.slice(0, 5).map((transaction, index) => (
+                    <div
+                      key={transaction.id || index}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: 18,
+                        borderRadius: 18,
+                        background: "#060a0f",
+                        border: "1px solid #162235",
+                      }}
+                    >
+                      <div>
+                        <p
+                          style={{
+                            margin: 0,
+                            color: "#e8edf3",
+                            fontWeight: 800,
+                          }}
+                        >
+                          {transaction.type || "Operación"}{" "}
+                          {transaction.ticker}
+                        </p>
+
+                        <p
+                          style={{
+                            margin: "6px 0 0",
+                            color: "#536079",
+                            fontSize: 14,
+                          }}
+                        >
+                          {transaction.quantity} acciones
+                          {transaction.price
+                            ? ` · ${money(transaction.price)}`
+                            : ""}
+                        </p>
+                      </div>
+
+                      <p style={{ margin: 0, color: "#7b8495", fontSize: 14 }}>
+                        {transaction.createdAt
+                          ? new Date(transaction.createdAt).toLocaleDateString(
+                              "es-AR",
+                            )
+                          : "Sin fecha"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </section>
+      </main>
+    </>
+  );
+}
+
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  positive = false,
+}: {
+  title: string;
+  value: string;
+  subtitle?: string;
+  positive?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        border: "1px solid #162235",
+        borderRadius: 22,
+        padding: 22,
+        background: "#0c1017",
+      }}
+    >
+      <p style={{ margin: "0 0 12px", color: "#536079", fontSize: 14 }}>
+        {title}
+      </p>
+
+      <p
+        style={{
+          margin: 0,
+          color: positive ? "#00e676" : "#e8edf3",
+          fontSize: 30,
+          fontWeight: 800,
+        }}
+      >
+        {value}
+      </p>
+
+      {subtitle && (
+        <p style={{ margin: "8px 0 0", color: "#4a5568", fontSize: 13 }}>
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SectionHeader({
+  title,
+  actionText,
+}: {
+  title: string;
+  actionText?: string;
+}) {
+  return (
+    <div
+      style={{
+        padding: "22px 24px",
+        borderBottom: "1px solid #162235",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          color: "#e8edf3",
+          fontSize: 22,
+        }}
+      >
+        {title}
+      </h2>
+
+      {actionText && <button style={smallButton}>{actionText}</button>}
+    </div>
+  );
+}
+
+const tdStyle = {
+  padding: "16px 10px",
+  color: "#7b8495",
+  borderTop: "1px solid #162235",
+  fontSize: 14,
+};
+
+const smallButton = {
+  border: "none",
+  borderRadius: 10,
+  background: "#00e676",
+  color: "#060a0f",
+  padding: "9px 12px",
+  fontWeight: 800,
+  cursor: "pointer",
+  marginRight: 8,
+};
+
+const smallGhostButton = {
+  border: "1px solid #243044",
+  borderRadius: 10,
+  background: "rgba(255,255,255,0.03)",
+  color: "#e8edf3",
+  padding: "9px 12px",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const quickButton = {
+  width: "100%",
+  border: "1px solid #243044",
+  borderRadius: 14,
+  background: "rgba(255,255,255,0.03)",
+  color: "#e8edf3",
+  padding: "14px 16px",
+  fontWeight: 800,
+  cursor: "pointer",
+  textAlign: "left" as const,
+};

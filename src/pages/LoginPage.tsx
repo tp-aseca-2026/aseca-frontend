@@ -1,21 +1,21 @@
 import { FormEvent, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { authService } from "../auth/authService";
 
 export function LoginPage() {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     setError("");
-    setSuccess("");
     setLoading(true);
 
     try {
@@ -23,9 +23,17 @@ export function LoginPage() {
 
       localStorage.setItem("accessToken", response.accessToken);
 
-      setSuccess("Sesión iniciada correctamente.");
-    } catch {
-      setError("Email o contraseña incorrectos.");
+      navigate("/home");
+    } catch (error: any) {
+      console.log("Login error:", error.response?.data);
+
+      const message = error.response?.data?.message;
+
+      if (message) {
+        setError(message);
+      } else {
+        setError("Email o contraseña incorrectos.");
+      }
     } finally {
       setLoading(false);
     }
@@ -34,6 +42,7 @@ export function LoginPage() {
   return (
     <main
       style={{
+        width: "100vw",
         minHeight: "100vh",
         background: "#080d14",
         color: "#e8edf3",
@@ -115,8 +124,7 @@ export function LoginPage() {
             onChange={setPassword}
           />
 
-          {error && <Message type="error" text={error} />}
-          {success && <Message type="success" text={success} />}
+          {error && <Message text={error} />}
 
           <button
             type="submit"
@@ -233,9 +241,7 @@ function AuthInput({
   );
 }
 
-function Message({ type, text }: { type: "error" | "success"; text: string }) {
-  const isError = type === "error";
-
+function Message({ text }: { text: string }) {
   return (
     <div
       style={{
@@ -243,13 +249,9 @@ function Message({ type, text }: { type: "error" | "success"; text: string }) {
         borderRadius: 14,
         padding: "16px 18px",
         fontSize: 15,
-        background: isError
-          ? "rgba(255,83,112,0.08)"
-          : "rgba(0,230,118,0.08)",
-        border: isError
-          ? "1px solid rgba(255,83,112,0.22)"
-          : "1px solid rgba(0,230,118,0.22)",
-        color: isError ? "#ff6b86" : "#00e676",
+        background: "rgba(255,83,112,0.08)",
+        border: "1px solid rgba(255,83,112,0.22)",
+        color: "#ff6b86",
       }}
     >
       {text}
