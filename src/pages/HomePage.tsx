@@ -529,7 +529,12 @@ export function HomePage() {
                 <div style={{ display: "grid", gap: 12 }}>
                   <button style={quickButton}>+ Registrar compra</button>
                   <button style={quickButton}>− Registrar venta</button>
-                  <button style={quickButton}>Buscar empresa en EDGAR</button>
+                  <button
+                    style={quickButton}
+                    onClick={() => navigate("/edgar")}
+                  >
+                    Buscar empresa en EDGAR
+                  </button>
                   <button style={quickButton}>Actualizar precios</button>
                 </div>
               </div>
