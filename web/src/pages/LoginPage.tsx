@@ -111,6 +111,7 @@ export function LoginPage() {
             placeholder="tu@email.com"
             value={email}
             icon="@"
+            dataCy="email-input"
             onChange={setEmail}
           />
 
@@ -120,6 +121,7 @@ export function LoginPage() {
             placeholder="••••••••"
             value={password}
             icon={showPassword ? "🙈" : "👁"}
+            dataCy="password-input"
             onIconClick={() => setShowPassword(!showPassword)}
             onChange={setPassword}
           />
@@ -129,6 +131,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
+            data-cy="submit-button"
             style={{
               width: "100%",
               height: 76,
@@ -173,6 +176,7 @@ type AuthInputProps = {
   placeholder: string;
   value: string;
   icon: string;
+  dataCy?: string;
   onChange: (value: string) => void;
   onIconClick?: () => void;
 };
@@ -183,6 +187,7 @@ function AuthInput({
   placeholder,
   value,
   icon,
+  dataCy,
   onChange,
   onIconClick,
 }: AuthInputProps) {
@@ -209,6 +214,7 @@ function AuthInput({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           required
+          data-cy={dataCy}
           style={{
             width: "100%",
             height: 76,
@@ -244,6 +250,7 @@ function AuthInput({
 function Message({ text }: { text: string }) {
   return (
     <div
+      data-cy="error-message"
       style={{
         marginBottom: 24,
         borderRadius: 14,

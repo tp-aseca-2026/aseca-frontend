@@ -1,64 +1,32 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { api } from "../api/axios";
+import { getPortfolio, type PortfolioResponse } from "../api/portfolio";
+import { buyTransaction, sellTransaction } from "../api/transactions";
+import { TransactionModal } from "../components/portfolio/TransactionModal";
+import { getStocks, type Stock } from "../api/stocks";
+import { getWatchlist, type WatchlistItem } from "../api/watchlist";
+import {
+  getLatestPriceSnapshots,
+  updatePriceSnapshots,
+  type PriceSnapshot,
+} from "../api/priceSnapshots";
 
 type Transaction = {
   id?: number;
-  ticker: string;
+  stockId: number;
+  ticker?: string;
   quantity: number;
   type?: "BUY" | "SELL";
+  executedAt?: string;
   createdAt?: string;
-  price?: number;
+  price?: number | string;
 };
 
-type PriceSnapshot = {
-  ticker: string;
-  price?: number;
-  lastPrice?: number;
-  closePrice?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  timestamp?: string;
-};
+function money(value: number | string) {
+  const numericValue = Number(value);
 
-const mockSummary = {
-  totalValue: 12450.8,
-  totalPnL: 820.35,
-  totalPnLPercent: 7.04,
-  positionsCount: 6,
-};
-
-const mockPositions = [
-  {
-    ticker: "AAPL",
-    companyName: "Apple Inc.",
-    quantity: 10,
-    avgBuyPrice: 180,
-    currentPrice: 192.5,
-    pnlPercent: 6.94,
-  },
-  {
-    ticker: "MSFT",
-    companyName: "Microsoft Corp.",
-    quantity: 5,
-    avgBuyPrice: 410,
-    currentPrice: 398.2,
-    pnlPercent: -2.88,
-  },
-  {
-    ticker: "NVDA",
-    companyName: "NVIDIA Corp.",
-    quantity: 3,
-    avgBuyPrice: 880,
-    currentPrice: 942.1,
-    pnlPercent: 7.05,
-  },
-];
-
-const mockWatchlist = ["AAPL", "NVDA", "MSFT", "GOOGL"];
-
-function money(value: number) {
-  return `USD ${value.toLocaleString("en-US", {
+  return `USD ${numericValue.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -80,7 +48,25 @@ export function HomePage() {
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [snapshots, setSnapshots] = useState<PriceSnapshot[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
+  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [transactionMode, setTransactionMode] = useState<"buy" | "sell">("buy");
+  const [selectedTicker, setSelectedTicker] = useState("");
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [updatingPrices, setUpdatingPrices] = useState(false);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
+
+  const summary = portfolio?.summary;
+  const positions = portfolio?.positions ?? [];
+
+  const totalValue = summary?.currentValue ?? 0;
+  const totalPnL = summary?.totalProfitLoss ?? 0;
+  const totalPnLPercent = summary?.unrealizedProfitLossPercentage ?? 0;
+  const positiveTotalPnL = totalPnL >= 0;
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -95,9 +81,18 @@ export function HomePage() {
 
   async function loadDashboardData() {
     try {
-      const [transactionsResponse, snapshotsResponse] = await Promise.allSettled([
+      const [
+        transactionsResponse,
+        snapshotsResponse,
+        portfolioResponse,
+        stocksResponse,
+        watchlistResponse,
+      ] = await Promise.allSettled([
         api.get<Transaction[]>("/transactions"),
-        api.get<PriceSnapshot[]>("/price-snapshots/latest"),
+        getLatestPriceSnapshots(),
+        getPortfolio(),
+        getStocks(),
+        getWatchlist(),
       ]);
 
       if (transactionsResponse.status === "fulfilled") {
@@ -105,7 +100,18 @@ export function HomePage() {
       }
 
       if (snapshotsResponse.status === "fulfilled") {
-        setSnapshots(snapshotsResponse.value.data);
+        setSnapshots(snapshotsResponse.value.prices);
+      }
+
+      if (portfolioResponse.status === "fulfilled") {
+        setPortfolio(portfolioResponse.value);
+      }
+
+      if (stocksResponse.status === "fulfilled") {
+        setStocks(stocksResponse.value);
+      }
+      if (watchlistResponse.status === "fulfilled") {
+        setWatchlist(watchlistResponse.value);
       }
     } catch (error) {
       console.log("Dashboard error:", error);
@@ -117,6 +123,79 @@ export function HomePage() {
   function logout() {
     localStorage.removeItem("accessToken");
     navigate("/login");
+  }
+
+  function openBuyModal(defaultTicker = "") {
+    setTransactionMode("buy");
+    setSelectedTicker(defaultTicker);
+    setTransactionError(null);
+    setTransactionModalOpen(true);
+  }
+
+  function openSellModal(defaultTicker = "") {
+    setTransactionMode("sell");
+    setSelectedTicker(defaultTicker);
+    setTransactionError(null);
+    setTransactionModalOpen(true);
+  }
+
+  function closeTransactionModal() {
+    setTransactionModalOpen(false);
+    setSelectedTicker("");
+    setTransactionError(null);
+  }
+
+  async function handleTransactionSubmit(ticker: string, quantity: number) {
+    if (!ticker) {
+      setTransactionError("Ingresá un ticker válido.");
+      return;
+    }
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      setTransactionError("La cantidad debe ser un número entero positivo.");
+      return;
+    }
+
+    try {
+      setTransactionLoading(true);
+      setTransactionError(null);
+
+      if (transactionMode === "buy") {
+        await buyTransaction(ticker, quantity);
+      } else {
+        await sellTransaction(ticker, quantity);
+      }
+
+      await loadDashboardData();
+      closeTransactionModal();
+    } catch (error) {
+      console.error(error);
+      setTransactionError(
+        transactionMode === "buy"
+          ? "No se pudo registrar la compra. Verificá que el ticker exista y tenga precio actualizado."
+          : "No se pudo registrar la venta. Verificá que tengas acciones suficientes.",
+      );
+    } finally {
+      setTransactionLoading(false);
+    }
+  }
+
+  async function handleUpdatePrices() {
+    try {
+      setUpdatingPrices(true);
+
+      const tickers = stocks.map((stock) => stock.ticker);
+
+      await updatePriceSnapshots(tickers);
+
+      await loadDashboardData();
+    } catch (error) {
+      console.error(error);
+
+      alert("No se pudieron actualizar los precios.");
+    } finally {
+      setUpdatingPrices(false);
+    }
   }
 
   return (
@@ -219,9 +298,7 @@ export function HomePage() {
                 }}
               >
                 Stock
-                <span style={{ color: "#00e676", fontWeight: 700 }}>
-                  Folio
-                </span>
+                <span style={{ color: "#00e676", fontWeight: 700 }}>Folio</span>
               </p>
             </div>
 
@@ -329,7 +406,11 @@ export function HomePage() {
               >
                 Última actualización de precios:{" "}
                 <span style={{ color: "#e8edf3", fontWeight: 700 }}>
-                  {getSnapshotDate(snapshots)}
+                  {summary?.lastPriceUpdatedAt
+                    ? new Date(summary.lastPriceUpdatedAt).toLocaleString(
+                        "es-AR",
+                      )
+                    : getSnapshotDate(snapshots)}
                 </span>
               </p>
             </div>
@@ -359,7 +440,7 @@ export function HomePage() {
                   color: "#f3f6fb",
                 }}
               >
-                {money(mockSummary.totalValue)}
+                {money(totalValue)}
               </h2>
 
               <div
@@ -367,15 +448,27 @@ export function HomePage() {
                   marginTop: 22,
                   padding: 18,
                   borderRadius: 18,
-                  background: "rgba(0,230,118,0.08)",
-                  border: "1px solid rgba(0,230,118,0.18)",
+                  background: positiveTotalPnL
+                    ? "rgba(0,230,118,0.08)"
+                    : "rgba(255,83,112,0.08)",
+                  border: positiveTotalPnL
+                    ? "1px solid rgba(0,230,118,0.18)"
+                    : "1px solid rgba(255,83,112,0.18)",
                 }}
               >
-                <p style={{ margin: 0, color: "#00e676", fontWeight: 800 }}>
-                  + {money(mockSummary.totalPnL)}
+                <p
+                  style={{
+                    margin: 0,
+                    color: positiveTotalPnL ? "#00e676" : "#ff5370",
+                    fontWeight: 800,
+                  }}
+                >
+                  {positiveTotalPnL ? "+" : ""}
+                  {money(totalPnL)}
                 </p>
                 <p style={{ margin: "6px 0 0", color: "#7b8495" }}>
-                  +{mockSummary.totalPnLPercent}% total
+                  {positiveTotalPnL ? "+" : ""}
+                  {totalPnLPercent.toFixed(2)}% total
                 </p>
               </div>
             </div>
@@ -389,15 +482,17 @@ export function HomePage() {
               marginBottom: 28,
             }}
           >
-            <MetricCard title="Valor actual" value={money(mockSummary.totalValue)} />
+            <MetricCard title="Valor actual" value={money(totalValue)} />
             <MetricCard
               title="Ganancia / pérdida"
-              value={`+${mockSummary.totalPnLPercent}%`}
-              positive
+              value={`${positiveTotalPnL ? "+" : ""}${totalPnLPercent.toFixed(
+                2,
+              )}%`}
+              positive={positiveTotalPnL}
             />
             <MetricCard
               title="Posiciones"
-              value={`${mockSummary.positionsCount}`}
+              value={`${positions.length}`}
               subtitle="acciones activas"
             />
             <MetricCard
@@ -425,84 +520,117 @@ export function HomePage() {
             >
               <SectionHeader
                 title="Mis posiciones"
-                actionText="+ Registrar compra"
+                actionText="Ver portfolio completo"
+                onAction={() => navigate("/portfolio")}
               />
 
               <div style={{ padding: 24 }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      {[
-                        "Ticker",
-                        "Cantidad",
-                        "Precio compra",
-                        "Precio actual",
-                        "P&L",
-                        "Acciones",
-                      ].map((header) => (
-                        <th
-                          key={header}
-                          style={{
-                            textAlign: "left",
-                            color: "#536079",
-                            fontSize: 12,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.12em",
-                            paddingBottom: 16,
-                          }}
-                        >
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {mockPositions.map((position) => {
-                      const positive = position.pnlPercent >= 0;
-
-                      return (
-                        <tr key={position.ticker}>
-                          <td style={tdStyle}>
-                            <strong style={{ color: "#e8edf3" }}>
-                              {position.ticker}
-                            </strong>
-                            <p style={{ margin: "4px 0 0", color: "#536079" }}>
-                              {position.companyName}
-                            </p>
-                          </td>
-
-                          <td style={tdStyle}>{position.quantity}</td>
-
-                          <td style={tdStyle}>{money(position.avgBuyPrice)}</td>
-
-                          <td style={tdStyle}>{money(position.currentPrice)}</td>
-
-                          <td
+                {loading ? (
+                  <p style={{ color: "#7b8495" }}>Cargando portfolio...</p>
+                ) : positions.length === 0 ? (
+                  <p style={{ color: "#7b8495" }}>
+                    Todavía no tenés posiciones activas.
+                  </p>
+                ) : (
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        {[
+                          "Ticker",
+                          "Cantidad",
+                          "Precio compra",
+                          "Precio actual",
+                          "P&L",
+                          "Acciones",
+                        ].map((header) => (
+                          <th
+                            key={header}
                             style={{
-                              ...tdStyle,
-                              color: positive ? "#00e676" : "#ff5370",
-                              fontWeight: 800,
+                              textAlign: "left",
+                              color: "#536079",
+                              fontSize: 12,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.12em",
+                              paddingBottom: 16,
                             }}
                           >
-                            {positive ? "+" : ""}
-                            {position.pnlPercent}%
-                          </td>
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
 
-                          <td style={tdStyle}>
-                            <button style={smallButton}>Comprar</button>
-                            <button style={smallGhostButton}>Vender</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                    <tbody>
+                      {positions.slice(0, 3).map((position) => {
+                        const pnlPercent =
+                          position.unrealizedProfitLossPercentage ?? 0;
+                        const positive = pnlPercent >= 0;
+
+                        return (
+                          <tr key={position.stockId}>
+                            <td style={tdStyle}>
+                              <strong style={{ color: "#e8edf3" }}>
+                                {position.ticker}
+                              </strong>
+                              <p
+                                style={{
+                                  margin: "4px 0 0",
+                                  color: "#536079",
+                                }}
+                              >
+                                {position.companyName ||
+                                  "Sin nombre registrado"}
+                              </p>
+                            </td>
+
+                            <td style={tdStyle}>{position.quantity}</td>
+
+                            <td style={tdStyle}>
+                              {money(position.averageBuyPrice)}
+                            </td>
+
+                            <td style={tdStyle}>
+                              {position.latestPrice !== null
+                                ? money(position.latestPrice)
+                                : "Sin precio"}
+                            </td>
+
+                            <td
+                              style={{
+                                ...tdStyle,
+                                color: positive ? "#00e676" : "#ff5370",
+                                fontWeight: 800,
+                              }}
+                            >
+                              {positive ? "+" : ""}
+                              {pnlPercent.toFixed(2)}%
+                            </td>
+
+                            <td style={tdStyle}>
+                              <button
+                                style={smallButton}
+                                onClick={() => openBuyModal(position.ticker)}
+                              >
+                                Comprar más
+                              </button>
+                              <button
+                                style={smallGhostButton}
+                                onClick={() => openSellModal(position.ticker)}
+                              >
+                                Vender
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
@@ -527,24 +655,40 @@ export function HomePage() {
                 </p>
 
                 <div style={{ display: "grid", gap: 12 }}>
-                  <button style={quickButton}>+ Registrar compra</button>
-                  <button style={quickButton}>− Registrar venta</button>
+                  <button style={quickButton} onClick={() => openBuyModal()}>
+                    + Registrar compra
+                  </button>
+
+                  <button style={quickButton} onClick={() => openSellModal()}>
+                    − Registrar venta
+                  </button>
+
                   <button
                     style={quickButton}
                     onClick={() => navigate("/edgar")}
                   >
                     Buscar empresa en EDGAR
                   </button>
-                  <button style={quickButton}>Actualizar precios</button>
+                  <button
+                    style={quickButton}
+                    onClick={handleUpdatePrices}
+                    disabled={updatingPrices}
+                  >
+                    {updatingPrices
+                      ? "Actualizando precios..."
+                      : "Actualizar precios"}
+                  </button>
                 </div>
               </div>
 
               <div
+                onClick={() => navigate("/watchlist")}
                 style={{
                   border: "1px solid #162235",
                   borderRadius: 28,
                   background: "#0c1017",
                   padding: 24,
+                  cursor: "pointer",
                 }}
               >
                 <p
@@ -566,27 +710,33 @@ export function HomePage() {
                     lineHeight: 1.5,
                   }}
                 >
-                  Mock temporal hasta implementar el módulo en backend.
+                  Empresas guardadas para seguimiento.
                 </p>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {mockWatchlist.map((ticker) => (
-                    <span
-                      key={ticker}
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: 999,
-                        background: "rgba(0,230,118,0.08)",
-                        border: "1px solid rgba(0,230,118,0.18)",
-                        color: "#00e676",
-                        fontWeight: 800,
-                        fontSize: 13,
-                      }}
-                    >
-                      {ticker}
-                    </span>
-                  ))}
-                </div>
+                {watchlist.length === 0 ? (
+                  <p style={{ margin: 0, color: "#7b8495", fontSize: 14 }}>
+                    Todavía no agregaste empresas.
+                  </p>
+                ) : (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {watchlist.map((item) => (
+                      <span
+                        key={item.id}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 999,
+                          background: "rgba(0,230,118,0.08)",
+                          border: "1px solid rgba(0,230,118,0.18)",
+                          color: "#00e676",
+                          fontWeight: 800,
+                          fontSize: 13,
+                        }}
+                      >
+                        {item.stock.ticker}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -600,7 +750,11 @@ export function HomePage() {
               overflow: "hidden",
             }}
           >
-            <SectionHeader title="Últimas transacciones" />
+            <SectionHeader
+              title="Últimas transacciones"
+              actionText="Ver más"
+              onAction={() => navigate("/transactions")}
+            />
 
             <div style={{ padding: 24 }}>
               {loading ? (
@@ -611,60 +765,83 @@ export function HomePage() {
                 </p>
               ) : (
                 <div style={{ display: "grid", gap: 12 }}>
-                  {transactions.slice(0, 5).map((transaction, index) => (
-                    <div
-                      key={transaction.id || index}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: 18,
-                        borderRadius: 18,
-                        background: "#060a0f",
-                        border: "1px solid #162235",
-                      }}
-                    >
-                      <div>
-                        <p
-                          style={{
-                            margin: 0,
-                            color: "#e8edf3",
-                            fontWeight: 800,
-                          }}
-                        >
-                          {transaction.type || "Operación"}{" "}
-                          {transaction.ticker}
-                        </p>
+                  {transactions.slice(0, 3).map((transaction, index) => {
+                    const stock = stocks.find(
+                      (stock) => stock.id === transaction.stockId,
+                    );
+                    const ticker = stock?.ticker ?? transaction.ticker ?? "";
+
+                    return (
+                      <div
+                        key={transaction.id || index}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: 18,
+                          borderRadius: 18,
+                          background: "#060a0f",
+                          border: "1px solid #162235",
+                        }}
+                      >
+                        <div>
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "#e8edf3",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {transaction.type === "BUY"
+                              ? "Compra"
+                              : transaction.type === "SELL"
+                                ? "Venta"
+                                : "Operación"}{" "}
+                            {ticker}
+                          </p>
+
+                          <p
+                            style={{
+                              margin: "6px 0 0",
+                              color: "#536079",
+                              fontSize: 14,
+                            }}
+                          >
+                            {transaction.quantity} acciones
+                            {transaction.price
+                              ? ` · ${money(transaction.price)}`
+                              : ""}
+                          </p>
+                        </div>
 
                         <p
-                          style={{
-                            margin: "6px 0 0",
-                            color: "#536079",
-                            fontSize: 14,
-                          }}
+                          style={{ margin: 0, color: "#7b8495", fontSize: 14 }}
                         >
-                          {transaction.quantity} acciones
-                          {transaction.price
-                            ? ` · ${money(transaction.price)}`
-                            : ""}
+                          {transaction.executedAt
+                            ? new Date(transaction.executedAt).toLocaleString(
+                                "es-AR",
+                              )
+                            : "Sin fecha"}
                         </p>
                       </div>
-
-                      <p style={{ margin: 0, color: "#7b8495", fontSize: 14 }}>
-                        {transaction.createdAt
-                          ? new Date(transaction.createdAt).toLocaleDateString(
-                              "es-AR",
-                            )
-                          : "Sin fecha"}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           </section>
         </section>
       </main>
+      <TransactionModal
+        open={transactionModalOpen}
+        mode={transactionMode}
+        stocks={stocks}
+        defaultTicker={selectedTicker}
+        loading={transactionLoading}
+        error={transactionError}
+        onClose={closeTransactionModal}
+        onSubmit={handleTransactionSubmit}
+      />
     </>
   );
 }
@@ -716,9 +893,11 @@ function MetricCard({
 function SectionHeader({
   title,
   actionText,
+  onAction,
 }: {
   title: string;
   actionText?: string;
+  onAction?: () => void;
 }) {
   return (
     <div
@@ -730,17 +909,13 @@ function SectionHeader({
         alignItems: "center",
       }}
     >
-      <h2
-        style={{
-          margin: 0,
-          color: "#e8edf3",
-          fontSize: 22,
-        }}
-      >
-        {title}
-      </h2>
+      <h2 style={{ margin: 0, color: "#e8edf3", fontSize: 22 }}>{title}</h2>
 
-      {actionText && <button style={smallButton}>{actionText}</button>}
+      {actionText && (
+        <button style={smallButton} onClick={onAction}>
+          {actionText}
+        </button>
+      )}
     </div>
   );
 }

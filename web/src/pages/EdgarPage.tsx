@@ -9,6 +9,7 @@ import {
   EdgarMetrics,
 } from "../api/edgar";
 
+
 type MetricKey = keyof EdgarMetrics;
 type HistoricalMetricKey = keyof EdgarHistoricalMetrics;
 type MetricFormat = "money" | "number";
@@ -156,7 +157,7 @@ export function EdgarPage() {
             fontWeight: 700,
           }}
         >
-          ← Volver al portfolio
+          ← Volver al inicio
         </Link>
 
         <p
@@ -353,19 +354,23 @@ export function EdgarPage() {
                     </p>
                   </div>
 
-                  <span
-                    style={{
-                      border: "1px solid rgba(0,230,118,0.22)",
-                      background: "rgba(0,230,118,0.08)",
-                      color: "#00e676",
-                      borderRadius: 999,
-                      padding: "10px 14px",
-                      fontSize: 13,
-                      fontWeight: 800,
-                    }}
-                  >
-                    Datos reales SEC
-                  </span>
+<div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+  <span
+    style={{
+      border: "1px solid rgba(0,230,118,0.22)",
+      background: "rgba(0,230,118,0.08)",
+      color: "#00e676",
+      borderRadius: 999,
+      padding: "10px 14px",
+      fontSize: 13,
+      fontWeight: 800,
+    }}
+  >
+    Datos reales SEC
+  </span>
+
+
+</div>
                 </div>
 
                 {loadingDetails && (
