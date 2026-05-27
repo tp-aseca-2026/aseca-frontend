@@ -23,6 +23,7 @@ import com.aseca.mobile.ui.asTokenPreview
 @Composable
 fun HomeScreen(
     accessToken: String,
+    onGoToPortfolio: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val accent = Color(0xFF00E676)
@@ -62,13 +63,27 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = onLogout,
+                onClick = onGoToPortfolio,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = accent,
                     contentColor = Color(0xFF06100B),
+                ),
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("Portfolio")
+            }
+
+            Button(
+                onClick = onLogout,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0C1017),
+                    contentColor = primaryText,
                 ),
                 shape = RoundedCornerShape(18.dp),
             ) {

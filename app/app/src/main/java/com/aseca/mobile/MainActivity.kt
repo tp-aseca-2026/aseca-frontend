@@ -16,10 +16,13 @@ import com.aseca.mobile.auth.TokenStore
 import com.aseca.mobile.ui.theme.AsecaMobileTheme
 import com.aseca.mobile.navigation.AuthScreen
 import com.aseca.mobile.repository.AuthRepository
+import com.aseca.mobile.repository.PortfolioRepository
 import com.aseca.mobile.ui.screens.HomeScreen
 import com.aseca.mobile.ui.screens.LoginScreen
+import com.aseca.mobile.ui.screens.PortfolioScreen
 import com.aseca.mobile.ui.screens.RegisterScreen
 import com.aseca.mobile.viewmodel.LoginViewModel
+import com.aseca.mobile.viewmodel.PortfolioViewModel
 import com.aseca.mobile.viewmodel.RegisterViewModel
 
 class MainActivity : ComponentActivity() {
@@ -28,6 +31,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val repository = AuthRepository()
+        val portfolioRepository = PortfolioRepository()
         val tokenStore = TokenStore(applicationContext)
         val factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -39,6 +43,9 @@ class MainActivity : ComponentActivity() {
                     modelClass.isAssignableFrom(RegisterViewModel::class.java) ->
                         RegisterViewModel(repository) as T
 
+                    modelClass.isAssignableFrom(PortfolioViewModel::class.java) ->
+                        PortfolioViewModel(portfolioRepository) as T
+
                     else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
                 }
             }
@@ -46,12 +53,14 @@ class MainActivity : ComponentActivity() {
         val provider = ViewModelProvider(this, factory)
         val loginViewModel = provider[LoginViewModel::class.java]
         val registerViewModel = provider[RegisterViewModel::class.java]
+        val portfolioViewModel = provider[PortfolioViewModel::class.java]
 
         setContent {
             AsecaMobileTheme {
                 AuthFlow(
                     loginViewModel = loginViewModel,
                     registerViewModel = registerViewModel,
+                    portfolioViewModel = portfolioViewModel,
                     tokenStore = tokenStore,
                 )
             }
@@ -63,6 +72,7 @@ class MainActivity : ComponentActivity() {
 fun AuthFlow(
     loginViewModel: LoginViewModel,
     registerViewModel: RegisterViewModel,
+    portfolioViewModel: PortfolioViewModel,
     tokenStore: TokenStore,
 ) {
     var accessToken by rememberSaveable { mutableStateOf(tokenStore.getAccessToken()) }
@@ -91,11 +101,18 @@ fun AuthFlow(
 
         AuthScreen.Home -> HomeScreen(
             accessToken = accessToken,
+            onGoToPortfolio = { currentScreen = AuthScreen.Portfolio },
             onLogout = {
                 tokenStore.clear()
                 accessToken = ""
                 currentScreen = AuthScreen.Login
             },
+        )
+
+        AuthScreen.Portfolio -> PortfolioScreen(
+            viewModel = portfolioViewModel,
+            accessToken = accessToken,
+            onBack = { currentScreen = AuthScreen.Home },
         )
     }
 }

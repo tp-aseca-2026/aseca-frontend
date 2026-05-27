@@ -4,4 +4,5 @@ enum class AuthScreen {
     Login,
     Register,
     Home,
+    Portfolio,
 }
