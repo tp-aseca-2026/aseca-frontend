@@ -13,8 +13,28 @@ export type WatchlistItem = {
   };
 };
 
+export type WatchlistComparisonItem = {
+  ticker: string;
+  companyName: string | null;
+  revenue: { val: number } | null;
+  netIncome: { val: number } | null;
+  eps: { val: number } | null;
+  totalAssets: { val: number } | null;
+  totalLiabilities: { val: number } | null;
+};
+
 export async function getWatchlist(): Promise<WatchlistItem[]> {
   const response = await api.get<WatchlistItem[]>("/watchlist");
+  return response.data;
+}
+
+export async function getWatchlistComparison(): Promise<
+  WatchlistComparisonItem[]
+> {
+  const response = await api.get<WatchlistComparisonItem[]>(
+    "/watchlist/comparison",
+  );
+
   return response.data;
 }
 

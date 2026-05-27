@@ -3,7 +3,9 @@ import { Link } from "react-router";
 import {
   addToWatchlist,
   getWatchlist,
+  getWatchlistComparison,
   removeFromWatchlist,
+  type WatchlistComparisonItem,
   type WatchlistItem,
 } from "../api/watchlist";
 import { getStocks, type Stock } from "../api/stocks";
@@ -11,8 +13,10 @@ import { getStocks, type Stock } from "../api/stocks";
 export function WatchlistPage() {
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [comparison, setComparison] = useState<WatchlistComparisonItem[]>([]);
   const [selectedTicker, setSelectedTicker] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingComparison, setLoadingComparison] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -32,11 +36,26 @@ export function WatchlistPage() {
 
       setItems(watchlistResult);
       setStocks(stocksResult);
+
+      await loadComparison();
     } catch (error) {
       console.error(error);
       setError("No pudimos cargar la watchlist.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadComparison() {
+    try {
+      setLoadingComparison(true);
+
+      const result = await getWatchlistComparison();
+      setComparison(result);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingComparison(false);
     }
   }
 
@@ -137,9 +156,7 @@ export function WatchlistPage() {
             marginBottom: 28,
           }}
         >
-          <h2 style={{ margin: "0 0 18px", fontSize: 22 }}>
-            Agregar empresa
-          </h2>
+          <h2 style={{ margin: "0 0 18px", fontSize: 22 }}>Agregar empresa</h2>
 
           <div style={{ display: "flex", gap: 12 }}>
             <select
@@ -236,9 +253,115 @@ export function WatchlistPage() {
             )}
           </div>
         </section>
+
+        <section
+          style={{
+            border: "1px solid #162235",
+            borderRadius: 24,
+            background: "#0c1017",
+            overflow: "hidden",
+            marginTop: 28,
+          }}
+        >
+          <div
+            style={{
+              padding: "22px 24px",
+              borderBottom: "1px solid #162235",
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: 22 }}>Comparación financiera</h2>
+            <p style={{ margin: "8px 0 0", color: "#7b8495", fontSize: 14 }}>
+              Métricas principales de las empresas guardadas en tu watchlist.
+            </p>
+          </div>
+
+          <div style={{ padding: 24 }}>
+            {loadingComparison ? (
+              <p style={{ color: "#7b8495" }}>Cargando comparación...</p>
+            ) : comparison.length === 0 ? (
+              <p style={{ color: "#7b8495" }}>
+                Agregá empresas a tu watchlist para compararlas.
+              </p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    {[
+                      "Ticker",
+                      "Revenue",
+                      "Net Income",
+                      "EPS",
+                      "Assets",
+                      "Liabilities",
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        style={{
+                          textAlign: "left",
+                          color: "#536079",
+                          fontSize: 12,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.12em",
+                          paddingBottom: 16,
+                        }}
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {comparison.map((item) => (
+                    <tr key={item.ticker}>
+                      <td style={tdStyle}>
+                        <strong style={{ color: "#e8edf3" }}>
+                          {item.ticker}
+                        </strong>
+                        <p style={{ margin: "4px 0 0", color: "#536079" }}>
+                          {item.companyName ?? "Sin nombre"}
+                        </p>
+                      </td>
+                      <td style={tdStyle}>{formatMoney(item.revenue?.val)}</td>
+                      <td style={tdStyle}>
+                        {formatMoney(item.netIncome?.val)}
+                      </td>
+                      <td style={tdStyle}>{formatNumber(item.eps?.val)}</td>
+                      <td style={tdStyle}>
+                        {formatMoney(item.totalAssets?.val)}
+                      </td>
+                      <td style={tdStyle}>
+                        {formatMoney(item.totalLiabilities?.val)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
       </section>
     </main>
   );
+}
+
+function formatMoney(value?: number) {
+  if (value == null) return "No disponible";
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatNumber(value?: number) {
+  if (value == null) return "No disponible";
+
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 const inputStyle = {
@@ -276,5 +399,12 @@ const errorStyle = {
   margin: "14px 0 0",
   color: "#ff5370",
   fontWeight: 700,
+  fontSize: 14,
+};
+
+const tdStyle = {
+  padding: "16px 10px",
+  color: "#7b8495",
+  borderTop: "1px solid #162235",
   fontSize: 14,
 };
