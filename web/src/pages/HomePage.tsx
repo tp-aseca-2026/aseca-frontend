@@ -6,6 +6,11 @@ import { buyTransaction, sellTransaction } from "../api/transactions";
 import { TransactionModal } from "../components/portfolio/TransactionModal";
 import { getStocks, type Stock } from "../api/stocks";
 import { getWatchlist, type WatchlistItem } from "../api/watchlist";
+import {
+  getLatestPriceSnapshots,
+  updatePriceSnapshots,
+  type PriceSnapshot,
+} from "../api/priceSnapshots";
 
 type Transaction = {
   id?: number;
@@ -58,6 +63,7 @@ export function HomePage() {
   const [transactionMode, setTransactionMode] = useState<"buy" | "sell">("buy");
   const [selectedTicker, setSelectedTicker] = useState("");
   const [transactionLoading, setTransactionLoading] = useState(false);
+  const [updatingPrices, setUpdatingPrices] = useState(false);
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
   const summary = portfolio?.summary;
@@ -89,7 +95,7 @@ export function HomePage() {
         watchlistResponse,
       ] = await Promise.allSettled([
         api.get<Transaction[]>("/transactions"),
-        api.get<PriceSnapshot[]>("/price-snapshots/latest"),
+        getLatestPriceSnapshots(),
         getPortfolio(),
         getStocks(),
         getWatchlist(),
@@ -100,7 +106,7 @@ export function HomePage() {
       }
 
       if (snapshotsResponse.status === "fulfilled") {
-        setSnapshots(snapshotsResponse.value.data);
+        setSnapshots(snapshotsResponse.value.prices);
       }
 
       if (portfolioResponse.status === "fulfilled") {
@@ -177,6 +183,24 @@ export function HomePage() {
       );
     } finally {
       setTransactionLoading(false);
+    }
+  }
+
+  async function handleUpdatePrices() {
+    try {
+      setUpdatingPrices(true);
+
+      const tickers = stocks.map((stock) => stock.ticker);
+
+      await updatePriceSnapshots(tickers);
+
+      await loadDashboardData();
+    } catch (error) {
+      console.error(error);
+
+      alert("No se pudieron actualizar los precios.");
+    } finally {
+      setUpdatingPrices(false);
     }
   }
 
@@ -651,7 +675,15 @@ export function HomePage() {
                   >
                     Buscar empresa en EDGAR
                   </button>
-                  <button style={quickButton}>Actualizar precios</button>
+                  <button
+                    style={quickButton}
+                    onClick={handleUpdatePrices}
+                    disabled={updatingPrices}
+                  >
+                    {updatingPrices
+                      ? "Actualizando precios..."
+                      : "Actualizar precios"}
+                  </button>
                 </div>
               </div>
 
