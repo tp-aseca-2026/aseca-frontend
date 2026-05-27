@@ -520,8 +520,8 @@ export function HomePage() {
             >
               <SectionHeader
                 title="Mis posiciones"
-                actionText="+ Registrar compra"
-                onAction={() => openBuyModal()}
+                actionText="Ver portfolio completo"
+                onAction={() => navigate("/portfolio")}
               />
 
               <div style={{ padding: 24 }}>
@@ -566,7 +566,7 @@ export function HomePage() {
                     </thead>
 
                     <tbody>
-                      {positions.map((position) => {
+                      {positions.slice(0, 3).map((position) => {
                         const pnlPercent =
                           position.unrealizedProfitLossPercentage ?? 0;
                         const positive = pnlPercent >= 0;

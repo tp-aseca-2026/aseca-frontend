@@ -6,6 +6,7 @@ import { HomePage } from "./pages/HomePage";
 import { EdgarPage } from "./pages/EdgarPage";
 import { WatchlistPage } from "./pages/WatchlistPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
+import { PortfolioPage } from "./pages/PortfolioPage";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/edgar" element={<EdgarPage />} />
         <Route path="/watchlist" element={<WatchlistPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/portfolio" element={<PortfolioPage />} />
       </Routes>
     </BrowserRouter>
   );
