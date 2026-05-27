@@ -157,7 +157,7 @@ export function EdgarPage() {
             fontWeight: 700,
           }}
         >
-          ← Volver al portfolio
+          ← Volver al inicio
         </Link>
 
         <p
