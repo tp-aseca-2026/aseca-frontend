@@ -14,25 +14,19 @@ import {
 
 type Transaction = {
   id?: number;
-  ticker: string;
+  stockId: number;
+  ticker?: string;
   quantity: number;
   type?: "BUY" | "SELL";
+  executedAt?: string;
   createdAt?: string;
-  price?: number;
+  price?: number | string;
 };
 
-type PriceSnapshot = {
-  ticker: string;
-  price?: number;
-  lastPrice?: number;
-  closePrice?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  timestamp?: string;
-};
+function money(value: number | string) {
+  const numericValue = Number(value);
 
-function money(value: number) {
-  return `USD ${value.toLocaleString("en-US", {
+  return `USD ${numericValue.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -756,7 +750,11 @@ export function HomePage() {
               overflow: "hidden",
             }}
           >
-            <SectionHeader title="Últimas transacciones" />
+            <SectionHeader
+              title="Últimas transacciones"
+              actionText="Ver más"
+              onAction={() => navigate("/transactions")}
+            />
 
             <div style={{ padding: 24 }}>
               {loading ? (
@@ -767,58 +765,67 @@ export function HomePage() {
                 </p>
               ) : (
                 <div style={{ display: "grid", gap: 12 }}>
-                  {transactions.slice(0, 5).map((transaction, index) => (
-                    <div
-                      key={transaction.id || index}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: 18,
-                        borderRadius: 18,
-                        background: "#060a0f",
-                        border: "1px solid #162235",
-                      }}
-                    >
-                      <div>
-                        <p
-                          style={{
-                            margin: 0,
-                            color: "#e8edf3",
-                            fontWeight: 800,
-                          }}
-                        >
-                          {transaction.type === "BUY"
-                            ? "Compra"
-                            : transaction.type === "SELL"
-                              ? "Venta"
-                              : "Operación"}{" "}
-                          {transaction.ticker}
-                        </p>
+                  {transactions.slice(0, 3).map((transaction, index) => {
+                    const stock = stocks.find(
+                      (stock) => stock.id === transaction.stockId,
+                    );
+                    const ticker = stock?.ticker ?? transaction.ticker ?? "";
+
+                    return (
+                      <div
+                        key={transaction.id || index}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: 18,
+                          borderRadius: 18,
+                          background: "#060a0f",
+                          border: "1px solid #162235",
+                        }}
+                      >
+                        <div>
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "#e8edf3",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {transaction.type === "BUY"
+                              ? "Compra"
+                              : transaction.type === "SELL"
+                                ? "Venta"
+                                : "Operación"}{" "}
+                            {ticker}
+                          </p>
+
+                          <p
+                            style={{
+                              margin: "6px 0 0",
+                              color: "#536079",
+                              fontSize: 14,
+                            }}
+                          >
+                            {transaction.quantity} acciones
+                            {transaction.price
+                              ? ` · ${money(transaction.price)}`
+                              : ""}
+                          </p>
+                        </div>
 
                         <p
-                          style={{
-                            margin: "6px 0 0",
-                            color: "#536079",
-                            fontSize: 14,
-                          }}
+                          style={{ margin: 0, color: "#7b8495", fontSize: 14 }}
                         >
-                          {transaction.quantity} acciones
-                          {transaction.price
-                            ? ` · ${money(transaction.price)}`
-                            : ""}
+                          {transaction.executedAt
+                            ? new Date(transaction.executedAt).toLocaleString(
+                                "es-AR",
+                              )
+                            : "Sin fecha"}
                         </p>
                       </div>
-
-                      <p style={{ margin: 0, color: "#7b8495", fontSize: 14 }}>
-                        {transaction.createdAt
-                          ? new Date(transaction.createdAt).toLocaleDateString(
-                              "es-AR",
-                            )
-                          : "Sin fecha"}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

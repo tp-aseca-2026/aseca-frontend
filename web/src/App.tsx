@@ -5,6 +5,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { HomePage } from "./pages/HomePage";
 import { EdgarPage } from "./pages/EdgarPage";
 import { WatchlistPage } from "./pages/WatchlistPage";
+import { TransactionsPage } from "./pages/TransactionsPage";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/home" element={<HomePage />} />
         <Route path="/edgar" element={<EdgarPage />} />
         <Route path="/watchlist" element={<WatchlistPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
       </Routes>
     </BrowserRouter>
   );
