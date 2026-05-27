@@ -16,9 +16,9 @@ import com.aseca.mobile.auth.TokenStore
 import com.aseca.mobile.ui.theme.AsecaMobileTheme
 import com.aseca.mobile.navigation.AuthScreen
 import com.aseca.mobile.repository.AuthRepository
-import com.aseca.mobile.ui.HomeScreen
-import com.aseca.mobile.ui.LoginScreen
-import com.aseca.mobile.ui.RegisterScreen
+import com.aseca.mobile.ui.screens.HomeScreen
+import com.aseca.mobile.ui.screens.LoginScreen
+import com.aseca.mobile.ui.screens.RegisterScreen
 import com.aseca.mobile.viewmodel.LoginViewModel
 import com.aseca.mobile.viewmodel.RegisterViewModel
 

@@ -1,4 +1,4 @@
-package com.aseca.mobile.ui
+package com.aseca.mobile.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aseca.mobile.ui.asTokenPreview
 
 @Composable
 fun HomeScreen(
@@ -75,10 +76,4 @@ fun HomeScreen(
             }
         }
     }
-}
-
-private fun String.asTokenPreview(): String {
-    if (isBlank()) return ""
-    if (length <= 16) return "recibido"
-    return "${take(8)}...${takeLast(6)}"
 }
