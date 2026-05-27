@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { api } from "../api/axios";
+import { getPortfolio, type PortfolioResponse } from "../api/portfolio";
 
 type Transaction = {
   id?: number;
@@ -20,40 +21,6 @@ type PriceSnapshot = {
   updatedAt?: string;
   timestamp?: string;
 };
-
-const mockSummary = {
-  totalValue: 12450.8,
-  totalPnL: 820.35,
-  totalPnLPercent: 7.04,
-  positionsCount: 6,
-};
-
-const mockPositions = [
-  {
-    ticker: "AAPL",
-    companyName: "Apple Inc.",
-    quantity: 10,
-    avgBuyPrice: 180,
-    currentPrice: 192.5,
-    pnlPercent: 6.94,
-  },
-  {
-    ticker: "MSFT",
-    companyName: "Microsoft Corp.",
-    quantity: 5,
-    avgBuyPrice: 410,
-    currentPrice: 398.2,
-    pnlPercent: -2.88,
-  },
-  {
-    ticker: "NVDA",
-    companyName: "NVIDIA Corp.",
-    quantity: 3,
-    avgBuyPrice: 880,
-    currentPrice: 942.1,
-    pnlPercent: 7.05,
-  },
-];
 
 const mockWatchlist = ["AAPL", "NVDA", "MSFT", "GOOGL"];
 
@@ -80,7 +47,16 @@ export function HomePage() {
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [snapshots, setSnapshots] = useState<PriceSnapshot[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const summary = portfolio?.summary;
+  const positions = portfolio?.positions ?? [];
+
+  const totalValue = summary?.currentValue ?? 0;
+  const totalPnL = summary?.totalProfitLoss ?? 0;
+  const totalPnLPercent = summary?.unrealizedProfitLossPercentage ?? 0;
+  const positiveTotalPnL = totalPnL >= 0;
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -95,10 +71,12 @@ export function HomePage() {
 
   async function loadDashboardData() {
     try {
-      const [transactionsResponse, snapshotsResponse] = await Promise.allSettled([
-        api.get<Transaction[]>("/transactions"),
-        api.get<PriceSnapshot[]>("/price-snapshots/latest"),
-      ]);
+      const [transactionsResponse, snapshotsResponse, portfolioResponse] =
+        await Promise.allSettled([
+          api.get<Transaction[]>("/transactions"),
+          api.get<PriceSnapshot[]>("/price-snapshots/latest"),
+          getPortfolio(),
+        ]);
 
       if (transactionsResponse.status === "fulfilled") {
         setTransactions(transactionsResponse.value.data);
@@ -106,6 +84,10 @@ export function HomePage() {
 
       if (snapshotsResponse.status === "fulfilled") {
         setSnapshots(snapshotsResponse.value.data);
+      }
+
+      if (portfolioResponse.status === "fulfilled") {
+        setPortfolio(portfolioResponse.value);
       }
     } catch (error) {
       console.log("Dashboard error:", error);
@@ -329,7 +311,11 @@ export function HomePage() {
               >
                 Última actualización de precios:{" "}
                 <span style={{ color: "#e8edf3", fontWeight: 700 }}>
-                  {getSnapshotDate(snapshots)}
+                  {summary?.lastPriceUpdatedAt
+                    ? new Date(summary.lastPriceUpdatedAt).toLocaleString(
+                        "es-AR",
+                      )
+                    : getSnapshotDate(snapshots)}
                 </span>
               </p>
             </div>
@@ -359,7 +345,7 @@ export function HomePage() {
                   color: "#f3f6fb",
                 }}
               >
-                {money(mockSummary.totalValue)}
+                {money(totalValue)}
               </h2>
 
               <div
@@ -367,15 +353,27 @@ export function HomePage() {
                   marginTop: 22,
                   padding: 18,
                   borderRadius: 18,
-                  background: "rgba(0,230,118,0.08)",
-                  border: "1px solid rgba(0,230,118,0.18)",
+                  background: positiveTotalPnL
+                    ? "rgba(0,230,118,0.08)"
+                    : "rgba(255,83,112,0.08)",
+                  border: positiveTotalPnL
+                    ? "1px solid rgba(0,230,118,0.18)"
+                    : "1px solid rgba(255,83,112,0.18)",
                 }}
               >
-                <p style={{ margin: 0, color: "#00e676", fontWeight: 800 }}>
-                  + {money(mockSummary.totalPnL)}
+                <p
+                  style={{
+                    margin: 0,
+                    color: positiveTotalPnL ? "#00e676" : "#ff5370",
+                    fontWeight: 800,
+                  }}
+                >
+                  {positiveTotalPnL ? "+" : ""}
+                  {money(totalPnL)}
                 </p>
                 <p style={{ margin: "6px 0 0", color: "#7b8495" }}>
-                  +{mockSummary.totalPnLPercent}% total
+                  {positiveTotalPnL ? "+" : ""}
+                  {totalPnLPercent.toFixed(2)}% total
                 </p>
               </div>
             </div>
@@ -389,15 +387,17 @@ export function HomePage() {
               marginBottom: 28,
             }}
           >
-            <MetricCard title="Valor actual" value={money(mockSummary.totalValue)} />
+            <MetricCard title="Valor actual" value={money(totalValue)} />
             <MetricCard
               title="Ganancia / pérdida"
-              value={`+${mockSummary.totalPnLPercent}%`}
-              positive
+              value={`${positiveTotalPnL ? "+" : ""}${totalPnLPercent.toFixed(
+                2,
+              )}%`}
+              positive={positiveTotalPnL}
             />
             <MetricCard
               title="Posiciones"
-              value={`${mockSummary.positionsCount}`}
+              value={`${positions.length}`}
               subtitle="acciones activas"
             />
             <MetricCard
@@ -429,80 +429,102 @@ export function HomePage() {
               />
 
               <div style={{ padding: 24 }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      {[
-                        "Ticker",
-                        "Cantidad",
-                        "Precio compra",
-                        "Precio actual",
-                        "P&L",
-                        "Acciones",
-                      ].map((header) => (
-                        <th
-                          key={header}
-                          style={{
-                            textAlign: "left",
-                            color: "#536079",
-                            fontSize: 12,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.12em",
-                            paddingBottom: 16,
-                          }}
-                        >
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {mockPositions.map((position) => {
-                      const positive = position.pnlPercent >= 0;
-
-                      return (
-                        <tr key={position.ticker}>
-                          <td style={tdStyle}>
-                            <strong style={{ color: "#e8edf3" }}>
-                              {position.ticker}
-                            </strong>
-                            <p style={{ margin: "4px 0 0", color: "#536079" }}>
-                              {position.companyName}
-                            </p>
-                          </td>
-
-                          <td style={tdStyle}>{position.quantity}</td>
-
-                          <td style={tdStyle}>{money(position.avgBuyPrice)}</td>
-
-                          <td style={tdStyle}>{money(position.currentPrice)}</td>
-
-                          <td
+                {loading ? (
+                  <p style={{ color: "#7b8495" }}>Cargando portfolio...</p>
+                ) : positions.length === 0 ? (
+                  <p style={{ color: "#7b8495" }}>
+                    Todavía no tenés posiciones activas.
+                  </p>
+                ) : (
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        {[
+                          "Ticker",
+                          "Cantidad",
+                          "Precio compra",
+                          "Precio actual",
+                          "P&L",
+                          "Acciones",
+                        ].map((header) => (
+                          <th
+                            key={header}
                             style={{
-                              ...tdStyle,
-                              color: positive ? "#00e676" : "#ff5370",
-                              fontWeight: 800,
+                              textAlign: "left",
+                              color: "#536079",
+                              fontSize: 12,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.12em",
+                              paddingBottom: 16,
                             }}
                           >
-                            {positive ? "+" : ""}
-                            {position.pnlPercent}%
-                          </td>
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
 
-                          <td style={tdStyle}>
-                            <button style={smallButton}>Comprar</button>
-                            <button style={smallGhostButton}>Vender</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                    <tbody>
+                      {positions.map((position) => {
+                        const pnlPercent =
+                          position.unrealizedProfitLossPercentage ?? 0;
+                        const positive = pnlPercent >= 0;
+
+                        return (
+                          <tr key={position.stockId}>
+                            <td style={tdStyle}>
+                              <strong style={{ color: "#e8edf3" }}>
+                                {position.ticker}
+                              </strong>
+                              <p
+                                style={{
+                                  margin: "4px 0 0",
+                                  color: "#536079",
+                                }}
+                              >
+                                {position.companyName ||
+                                  "Sin nombre registrado"}
+                              </p>
+                            </td>
+
+                            <td style={tdStyle}>{position.quantity}</td>
+
+                            <td style={tdStyle}>
+                              {money(position.averageBuyPrice)}
+                            </td>
+
+                            <td style={tdStyle}>
+                              {position.latestPrice !== null
+                                ? money(position.latestPrice)
+                                : "Sin precio"}
+                            </td>
+
+                            <td
+                              style={{
+                                ...tdStyle,
+                                color: positive ? "#00e676" : "#ff5370",
+                                fontWeight: 800,
+                              }}
+                            >
+                              {positive ? "+" : ""}
+                              {pnlPercent.toFixed(2)}%
+                            </td>
+
+                            <td style={tdStyle}>
+                              <button style={smallButton}>Comprar</button>
+                              <button style={smallGhostButton}>Vender</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
