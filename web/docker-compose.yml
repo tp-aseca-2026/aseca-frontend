@@ -1,0 +1,17 @@
+services:
+  web:
+    build:
+      context: .
+      target: dev
+    container_name: aseca-web
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - aseca_web_node_modules:/app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:3000
+
+volumes:
+  aseca_web_node_modules:

@@ -5,30 +5,28 @@ import { getPortfolio, type PortfolioResponse } from "../api/portfolio";
 import { buyTransaction, sellTransaction } from "../api/transactions";
 import { TransactionModal } from "../components/portfolio/TransactionModal";
 import { getStocks, type Stock } from "../api/stocks";
+import { getWatchlist, type WatchlistItem } from "../api/watchlist";
+import {
+  getLatestPriceSnapshots,
+  updatePriceSnapshots,
+  type PriceSnapshot,
+} from "../api/priceSnapshots";
 
 type Transaction = {
   id?: number;
-  ticker: string;
+  stockId: number;
+  ticker?: string;
   quantity: number;
   type?: "BUY" | "SELL";
+  executedAt?: string;
   createdAt?: string;
-  price?: number;
+  price?: number | string;
 };
 
-type PriceSnapshot = {
-  ticker: string;
-  price?: number;
-  lastPrice?: number;
-  closePrice?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  timestamp?: string;
-};
+function money(value: number | string) {
+  const numericValue = Number(value);
 
-const mockWatchlist = ["AAPL", "NVDA", "MSFT", "GOOGL"];
-
-function money(value: number) {
-  return `USD ${value.toLocaleString("en-US", {
+  return `USD ${numericValue.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -52,12 +50,14 @@ export function HomePage() {
   const [snapshots, setSnapshots] = useState<PriceSnapshot[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [transactionMode, setTransactionMode] = useState<"buy" | "sell">("buy");
   const [selectedTicker, setSelectedTicker] = useState("");
   const [transactionLoading, setTransactionLoading] = useState(false);
+  const [updatingPrices, setUpdatingPrices] = useState(false);
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
   const summary = portfolio?.summary;
@@ -86,11 +86,13 @@ export function HomePage() {
         snapshotsResponse,
         portfolioResponse,
         stocksResponse,
+        watchlistResponse,
       ] = await Promise.allSettled([
         api.get<Transaction[]>("/transactions"),
-        api.get<PriceSnapshot[]>("/price-snapshots/latest"),
+        getLatestPriceSnapshots(),
         getPortfolio(),
         getStocks(),
+        getWatchlist(),
       ]);
 
       if (transactionsResponse.status === "fulfilled") {
@@ -98,7 +100,7 @@ export function HomePage() {
       }
 
       if (snapshotsResponse.status === "fulfilled") {
-        setSnapshots(snapshotsResponse.value.data);
+        setSnapshots(snapshotsResponse.value.prices);
       }
 
       if (portfolioResponse.status === "fulfilled") {
@@ -107,6 +109,9 @@ export function HomePage() {
 
       if (stocksResponse.status === "fulfilled") {
         setStocks(stocksResponse.value);
+      }
+      if (watchlistResponse.status === "fulfilled") {
+        setWatchlist(watchlistResponse.value);
       }
     } catch (error) {
       console.log("Dashboard error:", error);
@@ -172,6 +177,24 @@ export function HomePage() {
       );
     } finally {
       setTransactionLoading(false);
+    }
+  }
+
+  async function handleUpdatePrices() {
+    try {
+      setUpdatingPrices(true);
+
+      const tickers = stocks.map((stock) => stock.ticker);
+
+      await updatePriceSnapshots(tickers);
+
+      await loadDashboardData();
+    } catch (error) {
+      console.error(error);
+
+      alert("No se pudieron actualizar los precios.");
+    } finally {
+      setUpdatingPrices(false);
     }
   }
 
@@ -497,8 +520,8 @@ export function HomePage() {
             >
               <SectionHeader
                 title="Mis posiciones"
-                actionText="+ Registrar compra"
-                onAction={() => openBuyModal()}
+                actionText="Ver portfolio completo"
+                onAction={() => navigate("/portfolio")}
               />
 
               <div style={{ padding: 24 }}>
@@ -543,7 +566,7 @@ export function HomePage() {
                     </thead>
 
                     <tbody>
-                      {positions.map((position) => {
+                      {positions.slice(0, 3).map((position) => {
                         const pnlPercent =
                           position.unrealizedProfitLossPercentage ?? 0;
                         const positive = pnlPercent >= 0;
@@ -646,16 +669,26 @@ export function HomePage() {
                   >
                     Buscar empresa en EDGAR
                   </button>
-                  <button style={quickButton}>Actualizar precios</button>
+                  <button
+                    style={quickButton}
+                    onClick={handleUpdatePrices}
+                    disabled={updatingPrices}
+                  >
+                    {updatingPrices
+                      ? "Actualizando precios..."
+                      : "Actualizar precios"}
+                  </button>
                 </div>
               </div>
 
               <div
+                onClick={() => navigate("/watchlist")}
                 style={{
                   border: "1px solid #162235",
                   borderRadius: 28,
                   background: "#0c1017",
                   padding: 24,
+                  cursor: "pointer",
                 }}
               >
                 <p
@@ -677,27 +710,33 @@ export function HomePage() {
                     lineHeight: 1.5,
                   }}
                 >
-                  Mock temporal hasta implementar el módulo en backend.
+                  Empresas guardadas para seguimiento.
                 </p>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {mockWatchlist.map((ticker) => (
-                    <span
-                      key={ticker}
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: 999,
-                        background: "rgba(0,230,118,0.08)",
-                        border: "1px solid rgba(0,230,118,0.18)",
-                        color: "#00e676",
-                        fontWeight: 800,
-                        fontSize: 13,
-                      }}
-                    >
-                      {ticker}
-                    </span>
-                  ))}
-                </div>
+                {watchlist.length === 0 ? (
+                  <p style={{ margin: 0, color: "#7b8495", fontSize: 14 }}>
+                    Todavía no agregaste empresas.
+                  </p>
+                ) : (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {watchlist.map((item) => (
+                      <span
+                        key={item.id}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 999,
+                          background: "rgba(0,230,118,0.08)",
+                          border: "1px solid rgba(0,230,118,0.18)",
+                          color: "#00e676",
+                          fontWeight: 800,
+                          fontSize: 13,
+                        }}
+                      >
+                        {item.stock.ticker}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -711,7 +750,11 @@ export function HomePage() {
               overflow: "hidden",
             }}
           >
-            <SectionHeader title="Últimas transacciones" />
+            <SectionHeader
+              title="Últimas transacciones"
+              actionText="Ver más"
+              onAction={() => navigate("/transactions")}
+            />
 
             <div style={{ padding: 24 }}>
               {loading ? (
@@ -722,63 +765,67 @@ export function HomePage() {
                 </p>
               ) : (
                 <div style={{ display: "grid", gap: 12 }}>
-                  {transactions.slice(0, 5).map((transaction, index) => (
-                    <div
-                      key={transaction.id || index}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: 18,
-                        borderRadius: 18,
-                        background: "#060a0f",
-                        border: "1px solid #162235",
-                      }}
-                    >
-                      <div>
+                  {transactions.slice(0, 3).map((transaction, index) => {
+                    const stock = stocks.find(
+                      (stock) => stock.id === transaction.stockId,
+                    );
+                    const ticker = stock?.ticker ?? transaction.ticker ?? "";
+
+                    return (
+                      <div
+                        key={transaction.id || index}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: 18,
+                          borderRadius: 18,
+                          background: "#060a0f",
+                          border: "1px solid #162235",
+                        }}
+                      >
+                        <div>
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "#e8edf3",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {transaction.type === "BUY"
+                              ? "Compra"
+                              : transaction.type === "SELL"
+                                ? "Venta"
+                                : "Operación"}{" "}
+                            {ticker}
+                          </p>
+
+                          <p
+                            style={{
+                              margin: "6px 0 0",
+                              color: "#536079",
+                              fontSize: 14,
+                            }}
+                          >
+                            {transaction.quantity} acciones
+                            {transaction.price
+                              ? ` · ${money(transaction.price)}`
+                              : ""}
+                          </p>
+                        </div>
+
                         <p
-                          style={{
-                            margin: 0,
-                            color: "#e8edf3",
-                            fontWeight: 800,
-                          }}
+                          style={{ margin: 0, color: "#7b8495", fontSize: 14 }}
                         >
-                          {transaction.type === "BUY"
-
-                            ? "Compra"
-
-                            : transaction.type === "SELL"
-
-                              ? "Venta"
-
-                              : "Operación"}{" "}
-
-                          {transaction.ticker}
-                        </p>
-
-                        <p
-                          style={{
-                            margin: "6px 0 0",
-                            color: "#536079",
-                            fontSize: 14,
-                          }}
-                        >
-                          {transaction.quantity} acciones
-                          {transaction.price
-                            ? ` · ${money(transaction.price)}`
-                            : ""}
+                          {transaction.executedAt
+                            ? new Date(transaction.executedAt).toLocaleString(
+                                "es-AR",
+                              )
+                            : "Sin fecha"}
                         </p>
                       </div>
-
-                      <p style={{ margin: 0, color: "#7b8495", fontSize: 14 }}>
-                        {transaction.createdAt
-                          ? new Date(transaction.createdAt).toLocaleDateString(
-                              "es-AR",
-                            )
-                          : "Sin fecha"}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
