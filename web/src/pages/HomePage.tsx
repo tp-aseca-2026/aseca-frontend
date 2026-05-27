@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { api } from "../api/axios";
 import { getPortfolio, type PortfolioResponse } from "../api/portfolio";
+import { buyTransaction, sellTransaction } from "../api/transactions";
+import { TransactionModal } from "../components/portfolio/TransactionModal";
+import { getStocks, type Stock } from "../api/stocks";
 
 type Transaction = {
   id?: number;
@@ -48,7 +51,14 @@ export function HomePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [snapshots, setSnapshots] = useState<PriceSnapshot[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
+  const [stocks, setStocks] = useState<Stock[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [transactionMode, setTransactionMode] = useState<"buy" | "sell">("buy");
+  const [selectedTicker, setSelectedTicker] = useState("");
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
 
   const summary = portfolio?.summary;
   const positions = portfolio?.positions ?? [];
@@ -71,12 +81,17 @@ export function HomePage() {
 
   async function loadDashboardData() {
     try {
-      const [transactionsResponse, snapshotsResponse, portfolioResponse] =
-        await Promise.allSettled([
-          api.get<Transaction[]>("/transactions"),
-          api.get<PriceSnapshot[]>("/price-snapshots/latest"),
-          getPortfolio(),
-        ]);
+      const [
+        transactionsResponse,
+        snapshotsResponse,
+        portfolioResponse,
+        stocksResponse,
+      ] = await Promise.allSettled([
+        api.get<Transaction[]>("/transactions"),
+        api.get<PriceSnapshot[]>("/price-snapshots/latest"),
+        getPortfolio(),
+        getStocks(),
+      ]);
 
       if (transactionsResponse.status === "fulfilled") {
         setTransactions(transactionsResponse.value.data);
@@ -89,6 +104,10 @@ export function HomePage() {
       if (portfolioResponse.status === "fulfilled") {
         setPortfolio(portfolioResponse.value);
       }
+
+      if (stocksResponse.status === "fulfilled") {
+        setStocks(stocksResponse.value);
+      }
     } catch (error) {
       console.log("Dashboard error:", error);
     } finally {
@@ -99,6 +118,61 @@ export function HomePage() {
   function logout() {
     localStorage.removeItem("accessToken");
     navigate("/login");
+  }
+
+  function openBuyModal(defaultTicker = "") {
+    setTransactionMode("buy");
+    setSelectedTicker(defaultTicker);
+    setTransactionError(null);
+    setTransactionModalOpen(true);
+  }
+
+  function openSellModal(defaultTicker = "") {
+    setTransactionMode("sell");
+    setSelectedTicker(defaultTicker);
+    setTransactionError(null);
+    setTransactionModalOpen(true);
+  }
+
+  function closeTransactionModal() {
+    setTransactionModalOpen(false);
+    setSelectedTicker("");
+    setTransactionError(null);
+  }
+
+  async function handleTransactionSubmit(ticker: string, quantity: number) {
+    if (!ticker) {
+      setTransactionError("Ingresá un ticker válido.");
+      return;
+    }
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      setTransactionError("La cantidad debe ser un número entero positivo.");
+      return;
+    }
+
+    try {
+      setTransactionLoading(true);
+      setTransactionError(null);
+
+      if (transactionMode === "buy") {
+        await buyTransaction(ticker, quantity);
+      } else {
+        await sellTransaction(ticker, quantity);
+      }
+
+      await loadDashboardData();
+      closeTransactionModal();
+    } catch (error) {
+      console.error(error);
+      setTransactionError(
+        transactionMode === "buy"
+          ? "No se pudo registrar la compra. Verificá que el ticker exista y tenga precio actualizado."
+          : "No se pudo registrar la venta. Verificá que tengas acciones suficientes.",
+      );
+    } finally {
+      setTransactionLoading(false);
+    }
   }
 
   return (
@@ -201,9 +275,7 @@ export function HomePage() {
                 }}
               >
                 Stock
-                <span style={{ color: "#00e676", fontWeight: 700 }}>
-                  Folio
-                </span>
+                <span style={{ color: "#00e676", fontWeight: 700 }}>Folio</span>
               </p>
             </div>
 
@@ -426,6 +498,7 @@ export function HomePage() {
               <SectionHeader
                 title="Mis posiciones"
                 actionText="+ Registrar compra"
+                onAction={() => openBuyModal()}
               />
 
               <div style={{ padding: 24 }}>
@@ -516,8 +589,18 @@ export function HomePage() {
                             </td>
 
                             <td style={tdStyle}>
-                              <button style={smallButton}>Comprar</button>
-                              <button style={smallGhostButton}>Vender</button>
+                              <button
+                                style={smallButton}
+                                onClick={() => openBuyModal(position.ticker)}
+                              >
+                                Comprar
+                              </button>
+                              <button
+                                style={smallGhostButton}
+                                onClick={() => openSellModal(position.ticker)}
+                              >
+                                Vender
+                              </button>
                             </td>
                           </tr>
                         );
@@ -549,8 +632,14 @@ export function HomePage() {
                 </p>
 
                 <div style={{ display: "grid", gap: 12 }}>
-                  <button style={quickButton}>+ Registrar compra</button>
-                  <button style={quickButton}>− Registrar venta</button>
+                  <button style={quickButton} onClick={() => openBuyModal()}>
+                    + Registrar compra
+                  </button>
+
+                  <button style={quickButton} onClick={() => openSellModal()}>
+                    − Registrar venta
+                  </button>
+
                   <button
                     style={quickButton}
                     onClick={() => navigate("/edgar")}
@@ -654,8 +743,7 @@ export function HomePage() {
                             fontWeight: 800,
                           }}
                         >
-                          {transaction.type || "Operación"}{" "}
-                          {transaction.ticker}
+                          {transaction.type || "Operación"} {transaction.ticker}
                         </p>
 
                         <p
@@ -687,6 +775,16 @@ export function HomePage() {
           </section>
         </section>
       </main>
+      <TransactionModal
+        open={transactionModalOpen}
+        mode={transactionMode}
+        stocks={stocks}
+        defaultTicker={selectedTicker}
+        loading={transactionLoading}
+        error={transactionError}
+        onClose={closeTransactionModal}
+        onSubmit={handleTransactionSubmit}
+      />
     </>
   );
 }
@@ -738,9 +836,11 @@ function MetricCard({
 function SectionHeader({
   title,
   actionText,
+  onAction,
 }: {
   title: string;
   actionText?: string;
+  onAction?: () => void;
 }) {
   return (
     <div
@@ -752,17 +852,13 @@ function SectionHeader({
         alignItems: "center",
       }}
     >
-      <h2
-        style={{
-          margin: 0,
-          color: "#e8edf3",
-          fontSize: 22,
-        }}
-      >
-        {title}
-      </h2>
+      <h2 style={{ margin: 0, color: "#e8edf3", fontSize: 22 }}>{title}</h2>
 
-      {actionText && <button style={smallButton}>{actionText}</button>}
+      {actionText && (
+        <button style={smallButton} onClick={onAction}>
+          {actionText}
+        </button>
+      )}
     </div>
   );
 }
