@@ -9,7 +9,6 @@ import {
   EdgarMetrics,
 } from "../api/edgar";
 
-import { api } from "../api/axios";
 
 type MetricKey = keyof EdgarMetrics;
 type HistoricalMetricKey = keyof EdgarHistoricalMetrics;
@@ -135,21 +134,6 @@ export function EdgarPage() {
 
   const activeMetricInfo = metricTabs.find((tab) => tab.key === activeMetric);
   const activeHistoricalPoints = historical?.[activeMetric] ?? [];
-
-  async function handleAddStock(company: EdgarCompany) {
-    try {
-      await api.post("/stocks", {
-        ticker: company.ticker,
-        companyName: company.companyName,
-        cik: company.cik,
-      });
-
-      alert(`${company.ticker} agregado al sistema. Ya podés comprarlo desde Portfolio.`);
-    } catch (error) {
-      console.log(error);
-      alert("No se pudo agregar el stock. Puede que ya exista.");
-    }
-  }
 
   return (
     <main
@@ -385,21 +369,7 @@ export function EdgarPage() {
     Datos reales SEC
   </span>
 
-  <button
-    onClick={() => handleAddStock(selectedCompany)}
-    style={{
-      border: "none",
-      borderRadius: 999,
-      background: "#00e676",
-      color: "#06100b",
-      padding: "10px 14px",
-      fontSize: 13,
-      fontWeight: 900,
-      cursor: "pointer",
-    }}
-  >
-    + Habilitar para operar
-  </button>
+
 </div>
                 </div>
 
