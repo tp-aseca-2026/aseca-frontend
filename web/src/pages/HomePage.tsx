@@ -5,6 +5,7 @@ import { getPortfolio, type PortfolioResponse } from "../api/portfolio";
 import { buyTransaction, sellTransaction } from "../api/transactions";
 import { TransactionModal } from "../components/portfolio/TransactionModal";
 import { getStocks, type Stock } from "../api/stocks";
+import { getWatchlist, type WatchlistItem } from "../api/watchlist";
 
 type Transaction = {
   id?: number;
@@ -24,8 +25,6 @@ type PriceSnapshot = {
   updatedAt?: string;
   timestamp?: string;
 };
-
-const mockWatchlist = ["AAPL", "NVDA", "MSFT", "GOOGL"];
 
 function money(value: number) {
   return `USD ${value.toLocaleString("en-US", {
@@ -52,6 +51,7 @@ export function HomePage() {
   const [snapshots, setSnapshots] = useState<PriceSnapshot[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
@@ -86,11 +86,13 @@ export function HomePage() {
         snapshotsResponse,
         portfolioResponse,
         stocksResponse,
+        watchlistResponse,
       ] = await Promise.allSettled([
         api.get<Transaction[]>("/transactions"),
         api.get<PriceSnapshot[]>("/price-snapshots/latest"),
         getPortfolio(),
         getStocks(),
+        getWatchlist(),
       ]);
 
       if (transactionsResponse.status === "fulfilled") {
@@ -107,6 +109,9 @@ export function HomePage() {
 
       if (stocksResponse.status === "fulfilled") {
         setStocks(stocksResponse.value);
+      }
+      if (watchlistResponse.status === "fulfilled") {
+        setWatchlist(watchlistResponse.value);
       }
     } catch (error) {
       console.log("Dashboard error:", error);
@@ -651,11 +656,13 @@ export function HomePage() {
               </div>
 
               <div
+                onClick={() => navigate("/watchlist")}
                 style={{
                   border: "1px solid #162235",
                   borderRadius: 28,
                   background: "#0c1017",
                   padding: 24,
+                  cursor: "pointer",
                 }}
               >
                 <p
@@ -677,27 +684,33 @@ export function HomePage() {
                     lineHeight: 1.5,
                   }}
                 >
-                  Mock temporal hasta implementar el módulo en backend.
+                  Empresas guardadas para seguimiento.
                 </p>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {mockWatchlist.map((ticker) => (
-                    <span
-                      key={ticker}
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: 999,
-                        background: "rgba(0,230,118,0.08)",
-                        border: "1px solid rgba(0,230,118,0.18)",
-                        color: "#00e676",
-                        fontWeight: 800,
-                        fontSize: 13,
-                      }}
-                    >
-                      {ticker}
-                    </span>
-                  ))}
-                </div>
+                {watchlist.length === 0 ? (
+                  <p style={{ margin: 0, color: "#7b8495", fontSize: 14 }}>
+                    Todavía no agregaste empresas.
+                  </p>
+                ) : (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {watchlist.map((item) => (
+                      <span
+                        key={item.id}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 999,
+                          background: "rgba(0,230,118,0.08)",
+                          border: "1px solid rgba(0,230,118,0.18)",
+                          color: "#00e676",
+                          fontWeight: 800,
+                          fontSize: 13,
+                        }}
+                      >
+                        {item.stock.ticker}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -744,15 +757,10 @@ export function HomePage() {
                           }}
                         >
                           {transaction.type === "BUY"
-
                             ? "Compra"
-
                             : transaction.type === "SELL"
-
                               ? "Venta"
-
                               : "Operación"}{" "}
-
                           {transaction.ticker}
                         </p>
 
