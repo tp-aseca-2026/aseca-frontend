@@ -130,6 +130,8 @@ async function handleSubmit(event: FormEvent) {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
+                autoComplete="off"
+                data-cy="email-input"
                 style={{
                   width: "100%",
                   height: 76,
@@ -180,6 +182,8 @@ async function handleSubmit(event: FormEvent) {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
+                autoComplete="new-password"
+                data-cy="password-input"
                 style={{
                   width: "100%",
                   height: 76,
@@ -212,6 +216,7 @@ async function handleSubmit(event: FormEvent) {
 
           {error && (
             <div
+              data-cy="error-message"
               style={{
                 marginBottom: 24,
                 borderRadius: 14,
@@ -229,6 +234,7 @@ async function handleSubmit(event: FormEvent) {
           <button
             type="submit"
             disabled={loading}
+            data-cy="submit-button"
             style={{
               width: "100%",
               height: 76,
