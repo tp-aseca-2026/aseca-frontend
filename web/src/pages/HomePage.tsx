@@ -593,7 +593,7 @@ export function HomePage() {
                                 style={smallButton}
                                 onClick={() => openBuyModal(position.ticker)}
                               >
-                                Comprar
+                                Comprar más
                               </button>
                               <button
                                 style={smallGhostButton}
@@ -743,7 +743,17 @@ export function HomePage() {
                             fontWeight: 800,
                           }}
                         >
-                          {transaction.type || "Operación"} {transaction.ticker}
+                          {transaction.type === "BUY"
+
+                            ? "Compra"
+
+                            : transaction.type === "SELL"
+
+                              ? "Venta"
+
+                              : "Operación"}{" "}
+
+                          {transaction.ticker}
                         </p>
 
                         <p
