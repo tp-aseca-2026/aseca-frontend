@@ -5,4 +5,6 @@ enum class AuthScreen {
     Register,
     Home,
     Portfolio,
+    Transactions,
+    Watchlist,
 }

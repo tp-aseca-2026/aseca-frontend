@@ -62,6 +62,21 @@ class ApiClient(
         return readResponse(connection)
     }
 
+    fun delete(path: String, accessToken: String? = null): JSONObject {
+        val url = URL("$baseUrl$path")
+        val connection = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "DELETE"
+            setRequestProperty("Content-Type", "application/json")
+            accessToken?.takeIf { it.isNotBlank() }?.let {
+                setRequestProperty("Authorization", "Bearer $it")
+            }
+            connectTimeout = 10_000
+            readTimeout = 10_000
+        }
+
+        return readResponse(connection)
+    }
+
     private fun readResponse(connection: HttpURLConnection): JSONObject {
         val responseText = readResponseText(connection)
         return if (responseText.isBlank()) JSONObject() else JSONObject(responseText)

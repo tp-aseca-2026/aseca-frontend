@@ -5,6 +5,7 @@ import com.aseca.mobile.models.PortfolioResponse
 import com.aseca.mobile.models.PortfolioSummary
 import com.aseca.mobile.models.Stock
 import com.aseca.mobile.models.Transaction
+import com.aseca.mobile.models.WatchlistItem
 import com.aseca.mobile.network.ApiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,6 +24,37 @@ class PortfolioRepository(
         val response = apiClient.getArray(path = "/stocks", accessToken = accessToken)
         response.toStocks()
     }
+
+    suspend fun getTransactions(accessToken: String): List<Transaction> =
+        withContext(Dispatchers.IO) {
+            val response = apiClient.getArray(path = "/transactions", accessToken = accessToken)
+            response.toTransactions()
+        }
+
+    suspend fun getWatchlist(accessToken: String): List<WatchlistItem> =
+        withContext(Dispatchers.IO) {
+            val response = apiClient.getArray(path = "/watchlist", accessToken = accessToken)
+            response.toWatchlist()
+        }
+
+    suspend fun addToWatchlist(accessToken: String, ticker: String): WatchlistItem =
+        withContext(Dispatchers.IO) {
+            val response = apiClient.post(
+                path = "/watchlist",
+                accessToken = accessToken,
+                payload = JSONObject().put("ticker", ticker),
+            )
+
+            response.toWatchlistItem()
+        }
+
+    suspend fun removeFromWatchlist(accessToken: String, ticker: String): Unit =
+        withContext(Dispatchers.IO) {
+            apiClient.delete(
+                path = "/watchlist/${ticker.trim().uppercase()}",
+                accessToken = accessToken,
+            )
+        }
 
     suspend fun buy(accessToken: String, ticker: String, quantity: Int): Transaction =
         withContext(Dispatchers.IO) {
@@ -99,6 +131,18 @@ private fun JSONArray.toStocks(): List<Stock> {
     }
 }
 
+private fun JSONArray.toTransactions(): List<Transaction> {
+    return (0 until length()).map { index ->
+        getJSONObject(index).toTransaction()
+    }
+}
+
+private fun JSONArray.toWatchlist(): List<WatchlistItem> {
+    return (0 until length()).map { index ->
+        getJSONObject(index).toWatchlistItem()
+    }
+}
+
 private fun JSONObject.toStock(): Stock {
     return Stock(
         id = getInt("id"),
@@ -117,6 +161,18 @@ private fun JSONObject.toTransaction(): Transaction {
         quantity = getInt("quantity"),
         price = getDouble("price"),
         executedAt = nullableString("executedAt"),
+    )
+}
+
+private fun JSONObject.toWatchlistItem(): WatchlistItem {
+    val stockJson = getJSONObject("stock")
+
+    return WatchlistItem(
+        id = getInt("id"),
+        userId = getInt("userId"),
+        stockId = getInt("stockId"),
+        createdAt = nullableString("createdAt"),
+        stock = stockJson.toStock(),
     )
 }
 

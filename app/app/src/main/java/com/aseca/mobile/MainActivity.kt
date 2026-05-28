@@ -21,9 +21,13 @@ import com.aseca.mobile.ui.screens.HomeScreen
 import com.aseca.mobile.ui.screens.LoginScreen
 import com.aseca.mobile.ui.screens.PortfolioScreen
 import com.aseca.mobile.ui.screens.RegisterScreen
+import com.aseca.mobile.ui.screens.TransactionsScreen
+import com.aseca.mobile.ui.screens.WatchlistScreen
 import com.aseca.mobile.viewmodel.LoginViewModel
 import com.aseca.mobile.viewmodel.PortfolioViewModel
 import com.aseca.mobile.viewmodel.RegisterViewModel
+import com.aseca.mobile.viewmodel.TransactionsViewModel
+import com.aseca.mobile.viewmodel.WatchlistViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +50,12 @@ class MainActivity : ComponentActivity() {
                     modelClass.isAssignableFrom(PortfolioViewModel::class.java) ->
                         PortfolioViewModel(portfolioRepository) as T
 
+                    modelClass.isAssignableFrom(TransactionsViewModel::class.java) ->
+                        TransactionsViewModel(portfolioRepository) as T
+
+                    modelClass.isAssignableFrom(WatchlistViewModel::class.java) ->
+                        WatchlistViewModel(portfolioRepository) as T
+
                     else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
                 }
             }
@@ -54,6 +64,8 @@ class MainActivity : ComponentActivity() {
         val loginViewModel = provider[LoginViewModel::class.java]
         val registerViewModel = provider[RegisterViewModel::class.java]
         val portfolioViewModel = provider[PortfolioViewModel::class.java]
+        val transactionsViewModel = provider[TransactionsViewModel::class.java]
+        val watchlistViewModel = provider[WatchlistViewModel::class.java]
 
         setContent {
             AsecaMobileTheme {
@@ -61,6 +73,8 @@ class MainActivity : ComponentActivity() {
                     loginViewModel = loginViewModel,
                     registerViewModel = registerViewModel,
                     portfolioViewModel = portfolioViewModel,
+                    transactionsViewModel = transactionsViewModel,
+                    watchlistViewModel = watchlistViewModel,
                     tokenStore = tokenStore,
                 )
             }
@@ -73,6 +87,8 @@ fun AuthFlow(
     loginViewModel: LoginViewModel,
     registerViewModel: RegisterViewModel,
     portfolioViewModel: PortfolioViewModel,
+    transactionsViewModel: TransactionsViewModel,
+    watchlistViewModel: WatchlistViewModel,
     tokenStore: TokenStore,
 ) {
     var accessToken by rememberSaveable { mutableStateOf(tokenStore.getAccessToken()) }
@@ -103,6 +119,8 @@ fun AuthFlow(
             accessToken = accessToken,
             viewModel = portfolioViewModel,
             onGoToPortfolio = { currentScreen = AuthScreen.Portfolio },
+            onGoToTransactions = { currentScreen = AuthScreen.Transactions },
+            onGoToWatchlist = { currentScreen = AuthScreen.Watchlist },
             onLogout = {
                 tokenStore.clear()
                 accessToken = ""
@@ -112,6 +130,18 @@ fun AuthFlow(
 
         AuthScreen.Portfolio -> PortfolioScreen(
             viewModel = portfolioViewModel,
+            accessToken = accessToken,
+            onBack = { currentScreen = AuthScreen.Home },
+        )
+
+        AuthScreen.Transactions -> TransactionsScreen(
+            viewModel = transactionsViewModel,
+            accessToken = accessToken,
+            onBack = { currentScreen = AuthScreen.Home },
+        )
+
+        AuthScreen.Watchlist -> WatchlistScreen(
+            viewModel = watchlistViewModel,
             accessToken = accessToken,
             onBack = { currentScreen = AuthScreen.Home },
         )

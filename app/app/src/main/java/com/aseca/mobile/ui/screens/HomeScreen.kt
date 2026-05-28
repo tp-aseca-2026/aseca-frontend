@@ -40,6 +40,8 @@ fun HomeScreen(
     accessToken: String,
     viewModel: PortfolioViewModel,
     onGoToPortfolio: () -> Unit,
+    onGoToTransactions: () -> Unit,
+    onGoToWatchlist: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val state = viewModel.uiState
@@ -69,6 +71,50 @@ fun HomeScreen(
                 onSell = { viewModel.openSell() },
             )
 
+            SectionTitle("Secciones")
+
+            Button(
+                onClick = onGoToPortfolio,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AuthColors.Accent,
+                    contentColor = Color(0xFF06100B),
+                ),
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("Ver portfolio completo")
+            }
+
+            Button(
+                onClick = onGoToTransactions,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0C1017),
+                    contentColor = AuthColors.PrimaryText,
+                ),
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("Ver transacciones")
+            }
+
+            Button(
+                onClick = onGoToWatchlist,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0C1017),
+                    contentColor = AuthColors.PrimaryText,
+                ),
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("Ver watchlist")
+            }
+
             when {
                 state.loading -> HomeLoading()
                 state.error.isNotBlank() -> HomeMessage(state.error, error = true)
@@ -97,20 +143,6 @@ fun HomeScreen(
                         HomeMessage("Mostrando 3 de ${positions.size} posiciones.")
                     }
                 }
-            }
-
-            Button(
-                onClick = onGoToPortfolio,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AuthColors.Accent,
-                    contentColor = Color(0xFF06100B),
-                ),
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text("Ver portfolio completo")
             }
         }
 
