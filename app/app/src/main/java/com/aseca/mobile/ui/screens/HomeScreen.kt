@@ -1,8 +1,9 @@
 package com.aseca.mobile.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,30 +13,46 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.aseca.mobile.ui.asTokenPreview
+import com.aseca.mobile.models.PortfolioSummary
+import com.aseca.mobile.ui.AuthColors
+import com.aseca.mobile.ui.portfolio.PortfolioActions
+import com.aseca.mobile.ui.portfolio.PortfolioPositionCard
+import com.aseca.mobile.ui.portfolio.TransactionDialog
+import com.aseca.mobile.viewmodel.PortfolioViewModel
+import java.text.NumberFormat
+import java.util.Currency
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
     accessToken: String,
+    viewModel: PortfolioViewModel,
     onGoToPortfolio: () -> Unit,
     onLogout: () -> Unit,
 ) {
-    val accent = Color(0xFF00E676)
-    val background = Color(0xFF080D14)
-    val primaryText = Color(0xFFF3F6FB)
-    val mutedText = Color(0xFFA1A9B7)
+    val state = viewModel.uiState
+    val portfolio = state.portfolio
+    val positions = portfolio?.positions.orEmpty()
+
+    LaunchedEffect(accessToken) {
+        viewModel.loadPortfolio(accessToken)
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = background,
+        color = AuthColors.Background,
     ) {
         Column(
             modifier = Modifier
@@ -44,54 +61,277 @@ fun HomeScreen(
                 .padding(horizontal = 24.dp, vertical = 40.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            Text(
-                text = "ASECA",
-                color = primaryText,
-                style = MaterialTheme.typography.headlineLarge,
-                fontSize = 44.sp,
+            HomeHeader(onLogout = onLogout)
+            DashboardHero(summary = portfolio?.summary)
+
+            PortfolioActions(
+                onBuy = { viewModel.openBuy() },
+                onSell = { viewModel.openSell() },
             )
 
-            Text(
-                text = "Sesión iniciada",
-                color = accent,
-                style = MaterialTheme.typography.titleMedium,
-            )
+            when {
+                state.loading -> HomeLoading()
+                state.error.isNotBlank() -> HomeMessage(state.error, error = true)
+                portfolio == null -> HomeMessage("No se pudo cargar el dashboard.")
+                positions.isEmpty() -> {
+                    HomeMetrics(summary = portfolio.summary, positionsCount = 0)
+                    HomeMessage("Todavía no tenés posiciones activas.")
+                }
+                else -> {
+                    HomeMetrics(
+                        summary = portfolio.summary,
+                        positionsCount = positions.size,
+                    )
 
-            Text(
-                text = "Token guardado: ${accessToken.asTokenPreview()}",
-                color = mutedText,
-                style = MaterialTheme.typography.bodyMedium,
-            )
+                    SectionTitle("Mis posiciones")
 
-            Spacer(modifier = Modifier.height(12.dp))
+                    positions.take(3).forEach { position ->
+                        PortfolioPositionCard(
+                            position = position,
+                            onBuy = { viewModel.openBuy(position.ticker) },
+                            onSell = { viewModel.openSell(position.ticker) },
+                        )
+                    }
+
+                    if (positions.size > 3) {
+                        HomeMessage("Mostrando 3 de ${positions.size} posiciones.")
+                    }
+                }
+            }
 
             Button(
                 onClick = onGoToPortfolio,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .height(60.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = accent,
+                    containerColor = AuthColors.Accent,
                     contentColor = Color(0xFF06100B),
                 ),
                 shape = RoundedCornerShape(18.dp),
             ) {
-                Text("Portfolio")
+                Text("Ver portfolio completo")
             }
+        }
 
-            Button(
-                onClick = onLogout,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF0C1017),
-                    contentColor = primaryText,
-                ),
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text("Logout")
+        TransactionDialog(
+            open = state.transactionModalOpen,
+            mode = state.transactionMode,
+            stocks = state.stocks,
+            selectedTicker = state.selectedTicker,
+            quantity = state.quantity,
+            loading = state.transactionLoading,
+            error = state.transactionError,
+            onTickerChange = viewModel::onTickerChange,
+            onQuantityChange = viewModel::onQuantityChange,
+            onClose = viewModel::closeTransaction,
+            onSubmit = { viewModel.submitTransaction(accessToken) },
+        )
+    }
+}
+
+@Composable
+private fun HomeHeader(onLogout: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column {
+            Text(
+                text = "StockFolio",
+                color = AuthColors.PrimaryText,
+                style = MaterialTheme.typography.headlineLarge,
+                fontSize = 34.sp,
+                fontWeight = FontWeight.Normal,
+            )
+            Text(
+                text = "Dashboard",
+                color = AuthColors.Accent,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        Button(
+            onClick = onLogout,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF0C1017),
+                contentColor = AuthColors.PrimaryText,
+            ),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Text("Salir")
+        }
+    }
+}
+
+@Composable
+private fun DashboardHero(summary: PortfolioSummary?) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF0C1017),
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(1.dp, AuthColors.Border),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Estado actual de tu portfolio",
+                color = AuthColors.PrimaryText,
+                style = MaterialTheme.typography.headlineSmall,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Normal,
+            )
+            Text(
+                text = "Valor total",
+                color = AuthColors.MutedText,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = summary?.currentValue.moneyOrEmpty(),
+                color = AuthColors.PrimaryText,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "Última actualización: ${summary?.lastPriceUpdatedAt ?: "sin registro"}",
+                color = AuthColors.MutedText,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeMetrics(
+    summary: PortfolioSummary,
+    positionsCount: Int,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            MetricCard(
+                title = "P&L total",
+                value = summary.totalProfitLoss.moneyOrEmpty(),
+                positive = (summary.totalProfitLoss ?: 0.0) >= 0,
+                modifier = Modifier.weight(1f),
+            )
+            MetricCard(
+                title = "P&L %",
+                value = summary.unrealizedProfitLossPercentage.percentOrEmpty(),
+                positive = (summary.unrealizedProfitLossPercentage ?: 0.0) >= 0,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            MetricCard(
+                title = "Costo",
+                value = summary.totalCostBasis.money(),
+                modifier = Modifier.weight(1f),
+            )
+            MetricCard(
+                title = "Posiciones",
+                value = positionsCount.toString(),
+                subtitle = "activas",
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MetricCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    positive: Boolean = false,
+) {
+    Surface(
+        modifier = modifier,
+        color = Color(0xFF0C1017),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, AuthColors.Border),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = title,
+                color = AuthColors.MutedText,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                text = value,
+                color = if (positive) AuthColors.Accent else AuthColors.PrimaryText,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    color = AuthColors.MutedText,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        color = AuthColors.PrimaryText,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+    )
+}
+
+@Composable
+private fun HomeLoading() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 28.dp),
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        CircularProgressIndicator(color = AuthColors.Accent)
+    }
+}
+
+@Composable
+private fun HomeMessage(
+    text: String,
+    error: Boolean = false,
+) {
+    Text(
+        text = text,
+        color = if (error) AuthColors.Error else AuthColors.MutedText,
+        style = MaterialTheme.typography.bodyMedium,
+    )
+}
+
+private fun Double.money(): String {
+    return moneyFormatter.format(this)
+}
+
+private fun Double?.moneyOrEmpty(): String {
+    return this?.money() ?: "Sin precio"
+}
+
+private fun Double?.percentOrEmpty(): String {
+    val value = this ?: return "Sin dato"
+    val prefix = if (value >= 0) "+" else ""
+    return "$prefix${"%.2f".format(Locale.US, value)}%"
+}
+
+private val moneyFormatter = NumberFormat.getCurrencyInstance(Locale.US).apply {
+    currency = Currency.getInstance("USD")
+    maximumFractionDigits = 2
+    minimumFractionDigits = 2
 }

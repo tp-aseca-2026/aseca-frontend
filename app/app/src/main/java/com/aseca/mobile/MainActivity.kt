@@ -101,6 +101,7 @@ fun AuthFlow(
 
         AuthScreen.Home -> HomeScreen(
             accessToken = accessToken,
+            viewModel = portfolioViewModel,
             onGoToPortfolio = { currentScreen = AuthScreen.Portfolio },
             onLogout = {
                 tokenStore.clear()
