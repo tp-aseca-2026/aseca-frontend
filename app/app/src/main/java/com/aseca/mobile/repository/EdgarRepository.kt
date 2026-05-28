@@ -15,28 +15,40 @@ import org.json.JSONObject
 class EdgarRepository(
     private val apiClient: ApiClient = ApiClient(),
 ) {
-    suspend fun searchCompanies(query: String): List<EdgarCompany> =
+    suspend fun searchCompanies(accessToken: String, query: String): List<EdgarCompany> =
         withContext(Dispatchers.IO) {
             val encodedQuery = URLEncoder.encode(query.trim(), "UTF-8")
-            val response = apiClient.getArray("/edgar/companies/search?q=$encodedQuery")
+            val response = apiClient.getArray(
+                path = "/edgar/companies/search?q=$encodedQuery",
+                accessToken = accessToken,
+            )
             response.toCompanies()
         }
 
-    suspend fun getCompanyMetrics(ticker: String): EdgarMetrics =
+    suspend fun getCompanyMetrics(accessToken: String, ticker: String): EdgarMetrics =
         withContext(Dispatchers.IO) {
-            val response = apiClient.get("/edgar/companies/${ticker.trim().uppercase()}/metrics")
+            val response = apiClient.get(
+                path = "/edgar/companies/${ticker.trim().uppercase()}/metrics",
+                accessToken = accessToken,
+            )
             response.toMetrics()
         }
 
-    suspend fun getCompanyFilings(ticker: String): List<EdgarFiling> =
+    suspend fun getCompanyFilings(accessToken: String, ticker: String): List<EdgarFiling> =
         withContext(Dispatchers.IO) {
-            val response = apiClient.getArray("/edgar/companies/${ticker.trim().uppercase()}/filings")
+            val response = apiClient.getArray(
+                path = "/edgar/companies/${ticker.trim().uppercase()}/filings",
+                accessToken = accessToken,
+            )
             response.toFilings()
         }
 
-    suspend fun getHistoricalMetrics(ticker: String): EdgarHistoricalMetrics =
+    suspend fun getHistoricalMetrics(accessToken: String, ticker: String): EdgarHistoricalMetrics =
         withContext(Dispatchers.IO) {
-            val response = apiClient.get("/edgar/companies/${ticker.trim().uppercase()}/historical-metrics")
+            val response = apiClient.get(
+                path = "/edgar/companies/${ticker.trim().uppercase()}/historical-metrics",
+                accessToken = accessToken,
+            )
             response.toHistoricalMetrics()
         }
 }

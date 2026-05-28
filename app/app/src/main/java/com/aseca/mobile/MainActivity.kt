@@ -159,6 +159,7 @@ fun AuthFlow(
 
         AuthScreen.Edgar -> EdgarScreen(
             viewModel = edgarViewModel,
+            accessToken = accessToken,
             onBack = { currentScreen = AuthScreen.Home },
         )
     }
