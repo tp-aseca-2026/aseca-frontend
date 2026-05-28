@@ -56,6 +56,15 @@ class PortfolioRepository(
             )
         }
 
+    suspend fun updatePriceSnapshots(accessToken: String, tickers: List<String>): Unit =
+        withContext(Dispatchers.IO) {
+            apiClient.post(
+                path = "/price-snapshots/update",
+                accessToken = accessToken,
+                payload = JSONObject().put("tickers", JSONArray(tickers)),
+            )
+        }
+
     suspend fun buy(accessToken: String, ticker: String, quantity: Int): Transaction =
         withContext(Dispatchers.IO) {
             val response = apiClient.post(

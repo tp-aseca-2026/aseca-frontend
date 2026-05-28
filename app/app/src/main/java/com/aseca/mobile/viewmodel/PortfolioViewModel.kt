@@ -26,6 +26,9 @@ data class PortfolioUiState(
     val quantity: String = "",
     val transactionLoading: Boolean = false,
     val transactionError: String = "",
+    val priceUpdateLoading: Boolean = false,
+    val priceUpdateMessage: String = "",
+    val priceUpdateError: String = "",
 )
 
 class PortfolioViewModel(
@@ -127,6 +130,54 @@ class PortfolioViewModel(
                 uiState = uiState.copy(
                     transactionLoading = false,
                     transactionError = exception.message ?: fallback,
+                )
+            }
+        }
+    }
+
+    fun updatePrices(accessToken: String) {
+        if (accessToken.isBlank()) {
+            uiState = uiState.copy(priceUpdateError = "No hay sesión activa.")
+            return
+        }
+
+        viewModelScope.launch {
+            uiState = uiState.copy(
+                priceUpdateLoading = true,
+                priceUpdateMessage = "",
+                priceUpdateError = "",
+            )
+
+            try {
+                val stocks = uiState.stocks.ifEmpty {
+                    portfolioRepository.getStocks(accessToken)
+                }
+                val tickers = stocks.map { stock -> stock.ticker }
+
+                if (tickers.isEmpty()) {
+                    uiState = uiState.copy(
+                        priceUpdateLoading = false,
+                        priceUpdateError = "No hay acciones cargadas para actualizar.",
+                    )
+                    return@launch
+                }
+
+                portfolioRepository.updatePriceSnapshots(accessToken, tickers)
+
+                val portfolio = portfolioRepository.getPortfolio(accessToken)
+                val refreshedStocks = portfolioRepository.getStocks(accessToken)
+
+                uiState = uiState.copy(
+                    portfolio = portfolio,
+                    stocks = refreshedStocks,
+                    priceUpdateLoading = false,
+                    priceUpdateMessage = "Precios actualizados.",
+                    priceUpdateError = "",
+                )
+            } catch (exception: Exception) {
+                uiState = uiState.copy(
+                    priceUpdateLoading = false,
+                    priceUpdateError = exception.message ?: "No se pudieron actualizar los precios.",
                 )
             }
         }

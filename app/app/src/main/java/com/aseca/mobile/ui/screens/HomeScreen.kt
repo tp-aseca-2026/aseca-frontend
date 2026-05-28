@@ -71,6 +71,31 @@ fun HomeScreen(
                 onSell = { viewModel.openSell() },
             )
 
+            Button(
+                onClick = { viewModel.updatePrices(accessToken) },
+                enabled = !state.priceUpdateLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0C1017),
+                    contentColor = AuthColors.PrimaryText,
+                    disabledContainerColor = Color(0xFF151820),
+                    disabledContentColor = AuthColors.MutedText,
+                ),
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text(if (state.priceUpdateLoading) "Actualizando precios..." else "Actualizar precios")
+            }
+
+            if (state.priceUpdateMessage.isNotBlank()) {
+                HomeMessage(state.priceUpdateMessage)
+            }
+
+            if (state.priceUpdateError.isNotBlank()) {
+                HomeMessage(state.priceUpdateError, error = true)
+            }
+
             SectionTitle("Secciones")
 
             Button(
