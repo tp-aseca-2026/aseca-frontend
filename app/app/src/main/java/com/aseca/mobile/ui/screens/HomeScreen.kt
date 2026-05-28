@@ -42,6 +42,7 @@ fun HomeScreen(
     onGoToPortfolio: () -> Unit,
     onGoToTransactions: () -> Unit,
     onGoToWatchlist: () -> Unit,
+    onGoToEdgar: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val state = viewModel.uiState
@@ -138,6 +139,20 @@ fun HomeScreen(
                 shape = RoundedCornerShape(18.dp),
             ) {
                 Text("Ver watchlist")
+            }
+
+            Button(
+                onClick = onGoToEdgar,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0C1017),
+                    contentColor = AuthColors.PrimaryText,
+                ),
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("Buscar empresa en EDGAR")
             }
 
             when {

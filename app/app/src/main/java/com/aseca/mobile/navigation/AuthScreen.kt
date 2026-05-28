@@ -7,4 +7,5 @@ enum class AuthScreen {
     Portfolio,
     Transactions,
     Watchlist,
+    Edgar,
 }

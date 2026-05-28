@@ -13,10 +13,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.aseca.mobile.auth.TokenStore
+import com.aseca.mobile.repository.EdgarRepository
 import com.aseca.mobile.ui.theme.AsecaMobileTheme
 import com.aseca.mobile.navigation.AuthScreen
 import com.aseca.mobile.repository.AuthRepository
 import com.aseca.mobile.repository.PortfolioRepository
+import com.aseca.mobile.ui.screens.EdgarScreen
 import com.aseca.mobile.ui.screens.HomeScreen
 import com.aseca.mobile.ui.screens.LoginScreen
 import com.aseca.mobile.ui.screens.PortfolioScreen
@@ -28,6 +30,7 @@ import com.aseca.mobile.viewmodel.PortfolioViewModel
 import com.aseca.mobile.viewmodel.RegisterViewModel
 import com.aseca.mobile.viewmodel.TransactionsViewModel
 import com.aseca.mobile.viewmodel.WatchlistViewModel
+import com.aseca.mobile.viewmodel.EdgarViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,6 +39,7 @@ class MainActivity : ComponentActivity() {
 
         val repository = AuthRepository()
         val portfolioRepository = PortfolioRepository()
+        val edgarRepository = EdgarRepository()
         val tokenStore = TokenStore(applicationContext)
         val factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -56,6 +60,9 @@ class MainActivity : ComponentActivity() {
                     modelClass.isAssignableFrom(WatchlistViewModel::class.java) ->
                         WatchlistViewModel(portfolioRepository) as T
 
+                    modelClass.isAssignableFrom(EdgarViewModel::class.java) ->
+                        EdgarViewModel(edgarRepository) as T
+
                     else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
                 }
             }
@@ -66,6 +73,7 @@ class MainActivity : ComponentActivity() {
         val portfolioViewModel = provider[PortfolioViewModel::class.java]
         val transactionsViewModel = provider[TransactionsViewModel::class.java]
         val watchlistViewModel = provider[WatchlistViewModel::class.java]
+        val edgarViewModel = provider[EdgarViewModel::class.java]
 
         setContent {
             AsecaMobileTheme {
@@ -75,6 +83,7 @@ class MainActivity : ComponentActivity() {
                     portfolioViewModel = portfolioViewModel,
                     transactionsViewModel = transactionsViewModel,
                     watchlistViewModel = watchlistViewModel,
+                    edgarViewModel = edgarViewModel,
                     tokenStore = tokenStore,
                 )
             }
@@ -89,6 +98,7 @@ fun AuthFlow(
     portfolioViewModel: PortfolioViewModel,
     transactionsViewModel: TransactionsViewModel,
     watchlistViewModel: WatchlistViewModel,
+    edgarViewModel: EdgarViewModel,
     tokenStore: TokenStore,
 ) {
     var accessToken by rememberSaveable { mutableStateOf(tokenStore.getAccessToken()) }
@@ -121,6 +131,7 @@ fun AuthFlow(
             onGoToPortfolio = { currentScreen = AuthScreen.Portfolio },
             onGoToTransactions = { currentScreen = AuthScreen.Transactions },
             onGoToWatchlist = { currentScreen = AuthScreen.Watchlist },
+            onGoToEdgar = { currentScreen = AuthScreen.Edgar },
             onLogout = {
                 tokenStore.clear()
                 accessToken = ""
@@ -143,6 +154,11 @@ fun AuthFlow(
         AuthScreen.Watchlist -> WatchlistScreen(
             viewModel = watchlistViewModel,
             accessToken = accessToken,
+            onBack = { currentScreen = AuthScreen.Home },
+        )
+
+        AuthScreen.Edgar -> EdgarScreen(
+            viewModel = edgarViewModel,
             onBack = { currentScreen = AuthScreen.Home },
         )
     }
