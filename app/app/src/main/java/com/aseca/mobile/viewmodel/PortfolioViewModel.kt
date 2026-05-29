@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aseca.mobile.models.LatestPriceSnapshots
 import com.aseca.mobile.models.PortfolioResponse
 import com.aseca.mobile.models.Stock
 import com.aseca.mobile.repository.PortfolioRepository
@@ -19,6 +20,7 @@ data class PortfolioUiState(
     val loading: Boolean = false,
     val error: String = "",
     val portfolio: PortfolioResponse? = null,
+    val latestPriceSnapshots: LatestPriceSnapshots? = null,
     val stocks: List<Stock> = emptyList(),
     val transactionMode: TransactionMode = TransactionMode.Buy,
     val transactionModalOpen: Boolean = false,
@@ -48,9 +50,14 @@ class PortfolioViewModel(
             try {
                 val portfolio = portfolioRepository.getPortfolio(accessToken)
                 val stocks = portfolioRepository.getStocks(accessToken)
+                val latestPriceSnapshots = runCatching {
+                    portfolioRepository.getLatestPriceSnapshots(accessToken)
+                }.getOrNull()
+
                 uiState = uiState.copy(
                     loading = false,
                     portfolio = portfolio,
+                    latestPriceSnapshots = latestPriceSnapshots,
                     stocks = stocks,
                 )
             } catch (exception: Exception) {
@@ -166,10 +173,12 @@ class PortfolioViewModel(
 
                 val portfolio = portfolioRepository.getPortfolio(accessToken)
                 val refreshedStocks = portfolioRepository.getStocks(accessToken)
+                val latestPriceSnapshots = portfolioRepository.getLatestPriceSnapshots(accessToken)
 
                 uiState = uiState.copy(
                     portfolio = portfolio,
                     stocks = refreshedStocks,
+                    latestPriceSnapshots = latestPriceSnapshots,
                     priceUpdateLoading = false,
                     priceUpdateMessage = "Precios actualizados.",
                     priceUpdateError = "",

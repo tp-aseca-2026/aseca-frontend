@@ -30,3 +30,16 @@ data class PortfolioResponse(
     val positions: List<PortfolioPosition>,
     val summary: PortfolioSummary,
 )
+
+data class LatestPriceSnapshots(
+    val lastUpdatedAt: String?,
+    val prices: List<PriceSnapshot>,
+)
+
+data class PriceSnapshot(
+    val ticker: String,
+    val stockId: Int,
+    val price: Double,
+    val source: String,
+    val fetchedAt: String?,
+)

@@ -1,8 +1,10 @@
 package com.aseca.mobile.repository
 
+import com.aseca.mobile.models.LatestPriceSnapshots
 import com.aseca.mobile.models.PortfolioPosition
 import com.aseca.mobile.models.PortfolioResponse
 import com.aseca.mobile.models.PortfolioSummary
+import com.aseca.mobile.models.PriceSnapshot
 import com.aseca.mobile.models.Stock
 import com.aseca.mobile.models.Transaction
 import com.aseca.mobile.models.WatchlistComparisonItem
@@ -76,6 +78,15 @@ class PortfolioRepository(
             )
         }
 
+    suspend fun getLatestPriceSnapshots(accessToken: String): LatestPriceSnapshots =
+        withContext(Dispatchers.IO) {
+            val response = apiClient.get(
+                path = "/price-snapshots/latest",
+                accessToken = accessToken,
+            )
+            response.toLatestPriceSnapshots()
+        }
+
     suspend fun buy(accessToken: String, ticker: String, quantity: Int): Transaction =
         withContext(Dispatchers.IO) {
             val response = apiClient.post(
@@ -142,6 +153,27 @@ private fun JSONObject.toPortfolioSummary(): PortfolioSummary {
         realizedProfitLoss = getDouble("realizedProfitLoss"),
         totalProfitLoss = nullableDouble("totalProfitLoss"),
         lastPriceUpdatedAt = nullableString("lastPriceUpdatedAt"),
+    )
+}
+
+private fun JSONObject.toLatestPriceSnapshots(): LatestPriceSnapshots {
+    val pricesJson = getJSONArray("prices")
+
+    return LatestPriceSnapshots(
+        lastUpdatedAt = nullableString("lastUpdatedAt"),
+        prices = (0 until pricesJson.length()).map { index ->
+            pricesJson.getJSONObject(index).toPriceSnapshot()
+        },
+    )
+}
+
+private fun JSONObject.toPriceSnapshot(): PriceSnapshot {
+    return PriceSnapshot(
+        ticker = getString("ticker"),
+        stockId = getInt("stockId"),
+        price = getDouble("price"),
+        source = getString("source"),
+        fetchedAt = nullableString("fetchedAt"),
     )
 }
 
