@@ -233,7 +233,7 @@ private fun HomeHeader(onLogout: () -> Unit) {
             ),
             shape = RoundedCornerShape(14.dp),
         ) {
-            Text("Salir")
+            Text("Cerrar sesión")
         }
     }
 }
