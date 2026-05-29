@@ -15,7 +15,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -38,7 +37,7 @@ import java.util.Locale
 fun TransactionsScreen(
     viewModel: TransactionsViewModel,
     accessToken: String,
-    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val state = viewModel.uiState
 
@@ -47,7 +46,7 @@ fun TransactionsScreen(
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         color = AuthColors.Background,
     ) {
         LazyColumn(
@@ -60,12 +59,6 @@ fun TransactionsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            item {
-                TextButton(onClick = onBack) {
-                    Text("← Home", color = AuthColors.MutedText)
-                }
-            }
-
             item {
                 Text(
                     text = "Historial de transacciones",

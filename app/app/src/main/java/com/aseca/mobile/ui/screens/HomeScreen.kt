@@ -41,10 +41,7 @@ import java.util.Locale
 fun HomeScreen(
     accessToken: String,
     viewModel: PortfolioViewModel,
-    onGoToPortfolio: () -> Unit,
-    onGoToTransactions: () -> Unit,
-    onGoToWatchlist: () -> Unit,
-    onGoToEdgar: () -> Unit,
+    modifier: Modifier = Modifier,
     onLogout: () -> Unit,
 ) {
     val state = viewModel.uiState
@@ -56,7 +53,7 @@ fun HomeScreen(
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         color = AuthColors.Background,
     ) {
         Column(
@@ -100,64 +97,6 @@ fun HomeScreen(
             }
 
             LatestPricesCard(latestPriceSnapshots = state.latestPriceSnapshots)
-
-            SectionTitle("Secciones")
-
-            Button(
-                onClick = onGoToPortfolio,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AuthColors.Accent,
-                    contentColor = Color(0xFF06100B),
-                ),
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text("Ver portfolio completo")
-            }
-
-            Button(
-                onClick = onGoToTransactions,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF0C1017),
-                    contentColor = AuthColors.PrimaryText,
-                ),
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text("Ver transacciones")
-            }
-
-            Button(
-                onClick = onGoToWatchlist,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF0C1017),
-                    contentColor = AuthColors.PrimaryText,
-                ),
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text("Ver watchlist")
-            }
-
-            Button(
-                onClick = onGoToEdgar,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF0C1017),
-                    contentColor = AuthColors.PrimaryText,
-                ),
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text("Buscar empresa en EDGAR")
-            }
 
             when {
                 state.loading -> HomeLoading()

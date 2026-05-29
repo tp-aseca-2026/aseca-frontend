@@ -9,6 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -18,6 +21,7 @@ import com.aseca.mobile.ui.theme.AsecaMobileTheme
 import com.aseca.mobile.navigation.AuthScreen
 import com.aseca.mobile.repository.AuthRepository
 import com.aseca.mobile.repository.PortfolioRepository
+import com.aseca.mobile.ui.navigation.AppBottomNavigation
 import com.aseca.mobile.ui.screens.EdgarScreen
 import com.aseca.mobile.ui.screens.HomeScreen
 import com.aseca.mobile.ui.screens.LoginScreen
@@ -125,43 +129,71 @@ fun AuthFlow(
             onAuthenticated = ::authenticate,
         )
 
-        AuthScreen.Home -> HomeScreen(
-            accessToken = accessToken,
-            viewModel = portfolioViewModel,
-            onGoToPortfolio = { currentScreen = AuthScreen.Portfolio },
-            onGoToTransactions = { currentScreen = AuthScreen.Transactions },
-            onGoToWatchlist = { currentScreen = AuthScreen.Watchlist },
-            onGoToEdgar = { currentScreen = AuthScreen.Edgar },
-            onLogout = {
-                tokenStore.clear()
-                accessToken = ""
-                currentScreen = AuthScreen.Login
-            },
-        )
+        AuthScreen.Home,
+        AuthScreen.Portfolio,
+        AuthScreen.Transactions,
+        AuthScreen.Watchlist,
+        AuthScreen.Edgar -> AuthenticatedScaffold(
+            currentScreen = currentScreen,
+            onNavigate = { screen -> currentScreen = screen },
+        ) { modifier ->
+            when (currentScreen) {
+                AuthScreen.Home -> HomeScreen(
+                    accessToken = accessToken,
+                    viewModel = portfolioViewModel,
+                    modifier = modifier,
+                    onLogout = {
+                        tokenStore.clear()
+                        accessToken = ""
+                        currentScreen = AuthScreen.Login
+                    },
+                )
 
-        AuthScreen.Portfolio -> PortfolioScreen(
-            viewModel = portfolioViewModel,
-            accessToken = accessToken,
-            onBack = { currentScreen = AuthScreen.Home },
-        )
+                AuthScreen.Portfolio -> PortfolioScreen(
+                    viewModel = portfolioViewModel,
+                    accessToken = accessToken,
+                    modifier = modifier,
+                )
 
-        AuthScreen.Transactions -> TransactionsScreen(
-            viewModel = transactionsViewModel,
-            accessToken = accessToken,
-            onBack = { currentScreen = AuthScreen.Home },
-        )
+                AuthScreen.Transactions -> TransactionsScreen(
+                    viewModel = transactionsViewModel,
+                    accessToken = accessToken,
+                    modifier = modifier,
+                )
 
-        AuthScreen.Watchlist -> WatchlistScreen(
-            viewModel = watchlistViewModel,
-            accessToken = accessToken,
-            onBack = { currentScreen = AuthScreen.Home },
-        )
+                AuthScreen.Watchlist -> WatchlistScreen(
+                    viewModel = watchlistViewModel,
+                    accessToken = accessToken,
+                    modifier = modifier,
+                )
 
-        AuthScreen.Edgar -> EdgarScreen(
-            viewModel = edgarViewModel,
-            accessToken = accessToken,
-            onBack = { currentScreen = AuthScreen.Home },
-        )
+                AuthScreen.Edgar -> EdgarScreen(
+                    viewModel = edgarViewModel,
+                    accessToken = accessToken,
+                    modifier = modifier,
+                )
+
+                else -> Unit
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuthenticatedScaffold(
+    currentScreen: AuthScreen,
+    onNavigate: (AuthScreen) -> Unit,
+    content: @Composable (Modifier) -> Unit,
+) {
+    Scaffold(
+        bottomBar = {
+            AppBottomNavigation(
+                currentScreen = currentScreen,
+                onNavigate = onNavigate,
+            )
+        },
+    ) { innerPadding ->
+        content(Modifier.padding(innerPadding))
     }
 }
 

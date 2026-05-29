@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -29,7 +28,7 @@ import com.aseca.mobile.viewmodel.WatchlistViewModel
 fun WatchlistScreen(
     viewModel: WatchlistViewModel,
     accessToken: String,
-    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val state = viewModel.uiState
 
@@ -38,7 +37,7 @@ fun WatchlistScreen(
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         color = AuthColors.Background,
     ) {
         LazyColumn(
@@ -51,12 +50,6 @@ fun WatchlistScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            item {
-                TextButton(onClick = onBack) {
-                    Text("← Home", color = AuthColors.MutedText)
-                }
-            }
-
             item { WatchlistHeader() }
 
             item {

@@ -21,7 +21,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,12 +61,12 @@ private data class HistoricalMetricDisplay(
 fun EdgarScreen(
     viewModel: EdgarViewModel,
     accessToken: String,
-    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val state = viewModel.uiState
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         color = AuthColors.Background,
     ) {
         LazyColumn(
@@ -80,12 +79,6 @@ fun EdgarScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            item {
-                TextButton(onClick = onBack) {
-                    Text("← Home", color = AuthColors.MutedText)
-                }
-            }
-
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
