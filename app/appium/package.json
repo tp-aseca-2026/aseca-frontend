@@ -1,0 +1,13 @@
+{
+  "name": "aseca-mobile-appium",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/auth-smoke.test.js"
+  },
+  "devDependencies": {
+    "appium": "^3.4.2",
+    "appium-uiautomator2-driver": "^7.5.2",
+    "webdriverio": "^9.20.0"
+  }
+}
