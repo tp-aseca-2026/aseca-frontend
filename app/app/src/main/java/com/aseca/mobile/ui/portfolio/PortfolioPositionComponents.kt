@@ -75,12 +75,14 @@ fun PortfolioPositionCard(
                     text = "Comprar más",
                     onClick = onBuy,
                     modifier = Modifier.weight(1f),
+                    automationId = "portfolio_position_buy_${position.ticker}",
                 )
                 PortfolioActionButton(
                     text = "Vender",
                     onClick = onSell,
                     primary = false,
                     modifier = Modifier.weight(1f),
+                    automationId = "portfolio_position_sell_${position.ticker}",
                 )
             }
         }

@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aseca.mobile.models.Stock
@@ -51,7 +53,9 @@ fun AddWatchlistCard(
             OutlinedTextField(
                 value = selectedTicker,
                 onValueChange = onTickerChange,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "watchlist_ticker_input" },
                 label = { Text("Ticker") },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -84,7 +88,9 @@ fun AddWatchlistCard(
             Button(
                 onClick = onAdd,
                 enabled = !actionLoading,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "watchlist_add_button" },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AuthColors.Accent,
                     contentColor = Color(0xFF06100B),
@@ -106,7 +112,9 @@ private fun StockChoice(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = "watchlist_stock_choice_${stock.ticker}" },
         color = if (selected) Color(0xFF10291C) else Color(0xFF060A0F),
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(

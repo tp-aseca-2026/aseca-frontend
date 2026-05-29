@@ -3,7 +3,7 @@
 Este repositorio queda preparado para separar web y app:
 
 - `web/`: frontend actual en React + Vite.
-- `app/`: futura app mobile (Android Studio).
+- `app/`: app Android base (Kotlin) preparada para evolucionar con MVVM.
 
 ## Uso actual
 

@@ -16,6 +16,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aseca.mobile.models.EdgarCompany
@@ -41,7 +43,9 @@ fun SearchCard(
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "edgar_search_input" },
                 label = { Text("Ej: AAPL, Apple, Microsoft") },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -58,7 +62,9 @@ fun SearchCard(
             Button(
                 onClick = onSearch,
                 enabled = !loading,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "edgar_search_button" },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AuthColors.Accent,
                     contentColor = Color(0xFF06100B),
@@ -80,7 +86,9 @@ fun CompanyCard(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = "edgar_company_${company.ticker}" },
         color = if (selected) Color(0xFF10291C) else Color(0xFF0C1017),
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(1.dp, if (selected) AuthColors.Accent else AuthColors.Border),

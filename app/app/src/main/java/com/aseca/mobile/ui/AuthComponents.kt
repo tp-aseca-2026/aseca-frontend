@@ -24,6 +24,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -79,13 +81,16 @@ fun AuthTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    accessibilityId: String,
     visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = accessibilityId },
         singleLine = true,
         visualTransformation = visualTransformation,
         colors = OutlinedTextFieldDefaults.colors(
@@ -138,13 +143,15 @@ fun AuthSubmitButton(
     loading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    accessibilityId: String,
 ) {
     Button(
         onClick = onClick,
         enabled = !loading,
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp),
+            .height(64.dp)
+            .semantics { contentDescription = accessibilityId },
         colors = ButtonDefaults.buttonColors(
             containerColor = AuthColors.Accent,
             contentColor = AuthColors.ButtonText,
@@ -172,12 +179,14 @@ fun AuthSubmitButton(
 fun AuthNavigationButton(
     text: String,
     onClick: () -> Unit,
+    accessibilityId: String,
 ) {
     TextButton(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 6.dp),
+            .padding(top = 6.dp)
+            .semantics { contentDescription = accessibilityId },
         colors = ButtonDefaults.textButtonColors(contentColor = AuthColors.Accent),
     ) {
         Text(text)

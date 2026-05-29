@@ -20,6 +20,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -79,12 +81,14 @@ fun TransactionDialog(
                     value = selectedTicker,
                     onValueChange = onTickerChange,
                     label = "Ticker",
+                    automationId = "transaction_ticker_input",
                 )
 
                 PortfolioTextField(
                     value = quantity,
                     onValueChange = onQuantityChange,
                     label = "Cantidad",
+                    automationId = "transaction_quantity_input",
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
 
@@ -102,6 +106,7 @@ fun TransactionDialog(
             Button(
                 onClick = onSubmit,
                 enabled = !loading,
+                modifier = Modifier.semantics { contentDescription = "transaction_submit_button" },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AuthColors.Accent,
                     contentColor = AuthColors.ButtonText,
@@ -120,7 +125,11 @@ fun TransactionDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onClose, enabled = !loading) {
+            TextButton(
+                onClick = onClose,
+                enabled = !loading,
+                modifier = Modifier.semantics { contentDescription = "transaction_cancel_button" },
+            ) {
                 Text("Cancelar", color = AuthColors.PrimaryText)
             }
         },
@@ -138,7 +147,9 @@ private fun TickerChoice(
 
     Button(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = "transaction_stock_choice_${stock.ticker}" },
         colors = ButtonDefaults.buttonColors(
             containerColor = background,
             contentColor = content,
@@ -154,13 +165,16 @@ private fun PortfolioTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
+    automationId: String,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = automationId },
         singleLine = true,
         keyboardOptions = keyboardOptions,
         colors = OutlinedTextFieldDefaults.colors(

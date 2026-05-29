@@ -15,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aseca.mobile.ui.AuthColors
@@ -41,8 +43,16 @@ fun PortfolioActions(
                 fontWeight = FontWeight.Bold,
             )
 
-            PortfolioActionButton(text = "+ Registrar compra", onClick = onBuy)
-            PortfolioActionButton(text = "− Registrar venta", onClick = onSell)
+            PortfolioActionButton(
+                text = "+ Registrar compra",
+                onClick = onBuy,
+                automationId = "portfolio_open_buy_dialog",
+            )
+            PortfolioActionButton(
+                text = "− Registrar venta",
+                onClick = onSell,
+                automationId = "portfolio_open_sell_dialog",
+            )
         }
     }
 }
@@ -53,10 +63,12 @@ internal fun PortfolioActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     primary: Boolean = true,
+    automationId: String,
 ) {
     Button(
         onClick = onClick,
         modifier = modifier
+            .semantics { contentDescription = automationId }
             .fillMaxWidth()
             .height(48.dp),
         colors = ButtonDefaults.buttonColors(

@@ -17,6 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aseca.mobile.models.EdgarHistoricalMetrics
@@ -101,7 +103,9 @@ private fun MetricTabButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(46.dp),
+        modifier = modifier
+            .height(46.dp)
+            .semantics { contentDescription = "edgar_metric_tab_${metric.key}" },
         colors = ButtonDefaults.buttonColors(
             containerColor = if (selected) Color(0xFF10291C) else Color(0xFF0C1017),
             contentColor = if (selected) AuthColors.Accent else AuthColors.PrimaryText,

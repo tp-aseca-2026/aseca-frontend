@@ -28,12 +28,14 @@ fun RegisterScreen(
             value = state.email,
             onValueChange = viewModel::onEmailChange,
             label = "Email",
+            accessibilityId = "register_email",
         )
 
         AuthTextField(
             value = state.password,
             onValueChange = viewModel::onPasswordChange,
             label = "Password",
+            accessibilityId = "register_password",
             visualTransformation = PasswordVisualTransformation(),
         )
 
@@ -50,11 +52,13 @@ fun RegisterScreen(
             text = "Register",
             loading = state.loading,
             onClick = { viewModel.register(onAuthenticated) },
+            accessibilityId = "register_submit",
         )
 
         AuthNavigationButton(
             text = "Back to Login",
             onClick = onGoToLogin,
+            accessibilityId = "back_to_login",
         )
     }
 }
