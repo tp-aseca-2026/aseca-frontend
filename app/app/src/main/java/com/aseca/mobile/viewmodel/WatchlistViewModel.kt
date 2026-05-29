@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aseca.mobile.models.Stock
+import com.aseca.mobile.models.WatchlistComparisonItem
 import com.aseca.mobile.models.WatchlistItem
 import com.aseca.mobile.repository.PortfolioRepository
 import kotlinx.coroutines.launch
@@ -17,6 +18,7 @@ data class WatchlistUiState(
     val success: String = "",
     val selectedTicker: String = "",
     val items: List<WatchlistItem> = emptyList(),
+    val comparison: List<WatchlistComparisonItem> = emptyList(),
     val availableStocks: List<Stock> = emptyList(),
 )
 
@@ -104,12 +106,16 @@ class WatchlistViewModel(
         loading: Boolean,
     ) {
         val items = portfolioRepository.getWatchlist(accessToken)
+        val comparison = runCatching {
+            portfolioRepository.getWatchlistComparison(accessToken)
+        }.getOrDefault(emptyList())
         val stocks = portfolioRepository.getStocks(accessToken)
         val selectedTickers = items.map { item -> item.stock.ticker }.toSet()
 
         uiState = uiState.copy(
             loading = loading,
             items = items,
+            comparison = comparison,
             availableStocks = stocks.filterNot { stock -> stock.ticker in selectedTickers },
         )
     }

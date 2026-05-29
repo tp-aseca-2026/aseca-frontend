@@ -29,9 +29,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aseca.mobile.models.Stock
+import com.aseca.mobile.models.WatchlistComparisonItem
+import com.aseca.mobile.models.WatchlistMetric
 import com.aseca.mobile.models.WatchlistItem
 import com.aseca.mobile.ui.AuthColors
 import com.aseca.mobile.viewmodel.WatchlistViewModel
+import java.text.NumberFormat
+import java.util.Currency
+import java.util.Locale
 
 @Composable
 fun WatchlistScreen(
@@ -118,6 +123,13 @@ fun WatchlistScreen(
                         )
                     }
                 }
+            }
+
+            item {
+                ComparisonSection(
+                    loading = state.loading,
+                    comparison = state.comparison,
+                )
             }
         }
     }
@@ -293,6 +305,105 @@ private fun WatchlistCard(
 }
 
 @Composable
+private fun ComparisonSection(
+    loading: Boolean,
+    comparison: List<WatchlistComparisonItem>,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF0C1017),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, AuthColors.Border),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Comparación financiera",
+                    color = AuthColors.PrimaryText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Métricas principales de las empresas guardadas.",
+                    color = AuthColors.MutedText,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            when {
+                loading -> WatchlistMessage("Cargando comparación...")
+                comparison.isEmpty() -> WatchlistMessage("Agregá empresas a tu watchlist para compararlas.")
+                else -> comparison.forEach { item ->
+                    ComparisonCard(item)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ComparisonCard(item: WatchlistComparisonItem) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF060A0F),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, AuthColors.Border),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column {
+                Text(
+                    text = item.ticker,
+                    color = AuthColors.PrimaryText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = item.companyName ?: "Sin nombre registrado",
+                    color = AuthColors.MutedText,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            ComparisonRow("Revenue", item.revenue.money())
+            ComparisonRow("Net Income", item.netIncome.money())
+            ComparisonRow("EPS", item.eps.number())
+            ComparisonRow("Assets", item.totalAssets.money())
+            ComparisonRow("Liabilities", item.totalLiabilities.money())
+        }
+    }
+}
+
+@Composable
+private fun ComparisonRow(
+    label: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            color = AuthColors.MutedText,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text(
+            text = value,
+            color = AuthColors.PrimaryText,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
 private fun SectionTitle(text: String) {
     Text(
         text = text,
@@ -300,6 +411,47 @@ private fun SectionTitle(text: String) {
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
     )
+}
+
+private fun WatchlistMetric?.money(): String {
+    return this?.value?.let { value ->
+        "${moneyFormatter.format(value.toCompactAmount())}${value.compactSuffix()}"
+    } ?: "No disponible"
+}
+
+private fun WatchlistMetric?.number(): String {
+    return this?.value?.let { value ->
+        numberFormatter.format(value)
+    } ?: "No disponible"
+}
+
+private fun Double.toCompactAmount(): Double {
+    val absolute = kotlin.math.abs(this)
+    return when {
+        absolute >= 1_000_000_000 -> this / 1_000_000_000
+        absolute >= 1_000_000 -> this / 1_000_000
+        absolute >= 1_000 -> this / 1_000
+        else -> this
+    }
+}
+
+private fun Double.compactSuffix(): String {
+    val absolute = kotlin.math.abs(this)
+    return when {
+        absolute >= 1_000_000_000 -> "B"
+        absolute >= 1_000_000 -> "M"
+        absolute >= 1_000 -> "K"
+        else -> ""
+    }
+}
+
+private val moneyFormatter = NumberFormat.getCurrencyInstance(Locale.US).apply {
+    currency = Currency.getInstance("USD")
+    maximumFractionDigits = 2
+}
+
+private val numberFormatter = NumberFormat.getNumberInstance(Locale.US).apply {
+    maximumFractionDigits = 2
 }
 
 @Composable

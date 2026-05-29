@@ -7,3 +7,17 @@ data class WatchlistItem(
     val createdAt: String?,
     val stock: Stock,
 )
+
+data class WatchlistComparisonItem(
+    val ticker: String,
+    val companyName: String?,
+    val revenue: WatchlistMetric?,
+    val netIncome: WatchlistMetric?,
+    val eps: WatchlistMetric?,
+    val totalAssets: WatchlistMetric?,
+    val totalLiabilities: WatchlistMetric?,
+)
+
+data class WatchlistMetric(
+    val value: Double,
+)

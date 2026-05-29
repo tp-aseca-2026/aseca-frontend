@@ -5,7 +5,9 @@ import com.aseca.mobile.models.PortfolioResponse
 import com.aseca.mobile.models.PortfolioSummary
 import com.aseca.mobile.models.Stock
 import com.aseca.mobile.models.Transaction
+import com.aseca.mobile.models.WatchlistComparisonItem
 import com.aseca.mobile.models.WatchlistItem
+import com.aseca.mobile.models.WatchlistMetric
 import com.aseca.mobile.network.ApiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,6 +37,15 @@ class PortfolioRepository(
         withContext(Dispatchers.IO) {
             val response = apiClient.getArray(path = "/watchlist", accessToken = accessToken)
             response.toWatchlist()
+        }
+
+    suspend fun getWatchlistComparison(accessToken: String): List<WatchlistComparisonItem> =
+        withContext(Dispatchers.IO) {
+            val response = apiClient.getArray(
+                path = "/watchlist/comparison",
+                accessToken = accessToken,
+            )
+            response.toWatchlistComparison()
         }
 
     suspend fun addToWatchlist(accessToken: String, ticker: String): WatchlistItem =
@@ -152,6 +163,12 @@ private fun JSONArray.toWatchlist(): List<WatchlistItem> {
     }
 }
 
+private fun JSONArray.toWatchlistComparison(): List<WatchlistComparisonItem> {
+    return (0 until length()).map { index ->
+        getJSONObject(index).toWatchlistComparisonItem()
+    }
+}
+
 private fun JSONObject.toStock(): Stock {
     return Stock(
         id = getInt("id"),
@@ -183,6 +200,22 @@ private fun JSONObject.toWatchlistItem(): WatchlistItem {
         createdAt = nullableString("createdAt"),
         stock = stockJson.toStock(),
     )
+}
+
+private fun JSONObject.toWatchlistComparisonItem(): WatchlistComparisonItem {
+    return WatchlistComparisonItem(
+        ticker = getString("ticker"),
+        companyName = nullableString("companyName"),
+        revenue = nullableMetric("revenue"),
+        netIncome = nullableMetric("netIncome"),
+        eps = nullableMetric("eps"),
+        totalAssets = nullableMetric("totalAssets"),
+        totalLiabilities = nullableMetric("totalLiabilities"),
+    )
+}
+
+private fun JSONObject.nullableMetric(key: String): WatchlistMetric? {
+    return if (isNull(key)) null else WatchlistMetric(value = getJSONObject(key).getDouble("val"))
 }
 
 private fun JSONObject.nullableDouble(key: String): Double? {
