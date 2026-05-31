@@ -63,6 +63,18 @@ class PortfolioPage {
     async expectPositionVisible(ticker: string) {
         await expect(this.positionTicker(ticker)).toBeDisplayed();
     }
+
+    async openSellDialog() {
+        await this.openSellDialogButton.waitForDisplayed({ timeout: 10000 });
+        await this.openSellDialogButton.click();
+    }
+
+    async sellStock(ticker: string, quantity: string) {
+        await this.openSellDialog();
+        await this.selectStock(ticker);
+        await this.fillQuantity(quantity);
+        await this.submitTransaction();
+    }
 }
 
 export default new PortfolioPage();
