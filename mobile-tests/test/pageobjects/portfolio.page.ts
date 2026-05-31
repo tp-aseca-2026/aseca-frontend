@@ -75,6 +75,34 @@ class PortfolioPage {
         await this.fillQuantity(quantity);
         await this.submitTransaction();
     }
+
+    get summaryTitle() {
+        return $('android=new UiSelector().text("Resumen")');
+    }
+
+    get totalCostLabel() {
+        return $('android=new UiSelector().text("Costo total")');
+    }
+
+    get currentValueLabel() {
+        return $('android=new UiSelector().text("Valor actual")');
+    }
+
+    get totalProfitLossLabel() {
+        return $('android=new UiSelector().text("P&L total")');
+    }
+
+    get unrealizedProfitLossLabel() {
+        return $('android=new UiSelector().text("P&L no realizado")');
+    }
+
+    async expectSummaryVisible() {
+        await expect(this.summaryTitle).toBeDisplayed();
+        await expect(this.totalCostLabel).toBeDisplayed();
+        await expect(this.currentValueLabel).toBeDisplayed();
+        await expect(this.totalProfitLossLabel).toBeDisplayed();
+        await expect(this.unrealizedProfitLossLabel).toBeDisplayed();
+    }
 }
 
 export default new PortfolioPage();
