@@ -1,54 +1,55 @@
-name: Release
+name: App Release
 
 on:
   push:
     branches:
       - main
     paths:
-      - "web/**"
-      - ".github/workflows/release.yml"
+      - "app/**"
+      - ".github/workflows/app-release.yml"
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
-  packages: write
 
 jobs:
-  test:
-    name: Quality Checks
+  checks:
+    name: Android Checks
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web
+        working-directory: app
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+          distribution: temurin
+          java-version: 17
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Run linter
-        run: npm run lint
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
 
-      - name: Build
-        run: npm run build
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug
 
   release:
     name: Semantic Release
-    needs: [test]
+    needs: [checks]
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web
+        working-directory: app
 
     steps:
       - name: Checkout repository
@@ -60,17 +61,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v4
         with:
-          working_directory: web
+          working_directory: app
           extra_plugins: |
             @semantic-release/commit-analyzer
             @semantic-release/release-notes-generator
