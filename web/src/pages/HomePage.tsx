@@ -186,7 +186,12 @@ export function HomePage() {
 
       const tickers = stocks.map((stock) => stock.ticker);
 
-      await updatePriceSnapshots(tickers);
+      const result = await updatePriceSnapshots(tickers);
+
+      if (result.saved === 0 && result.failed.length > 0) {
+        alert(`No se pudieron actualizar los precios: ${result.failed[0].error}`);
+        return;
+      }
 
       await loadDashboardData();
     } catch (error) {
@@ -524,7 +529,7 @@ export function HomePage() {
                 onAction={() => navigate("/portfolio")}
               />
 
-              <div style={{ padding: 24 }}>
+              <div style={{ padding: 24 }} data-cy="positions-list">
                 {loading ? (
                   <p style={{ color: "#7b8495" }}>Cargando portfolio...</p>
                 ) : positions.length === 0 ? (
@@ -655,7 +660,11 @@ export function HomePage() {
                 </p>
 
                 <div style={{ display: "grid", gap: 12 }}>
-                  <button style={quickButton} onClick={() => openBuyModal()}>
+                  <button
+                    style={quickButton}
+                    onClick={() => openBuyModal()}
+                    data-cy="buy-button"
+                  >
                     + Registrar compra
                   </button>
 

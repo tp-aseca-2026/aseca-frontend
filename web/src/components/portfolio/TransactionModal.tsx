@@ -43,7 +43,7 @@ export function TransactionModal({
 
   return (
     <div style={overlayStyle}>
-      <form onSubmit={handleSubmit} style={modalStyle}>
+      <form onSubmit={handleSubmit} style={modalStyle} data-cy="transaction-modal">
         <h2 style={{ margin: 0, fontSize: 26 }}>{title}</h2>
 
         <p style={descriptionStyle}>
@@ -51,7 +51,12 @@ export function TransactionModal({
         </p>
 
         <label style={labelStyle}>Acción</label>
-        <select name="ticker" defaultValue={defaultTicker} style={inputStyle}>
+        <select
+          name="ticker"
+          defaultValue={defaultTicker}
+          style={inputStyle}
+          data-cy="modal-ticker-select"
+        >
           <option value="">Seleccioná una acción</option>
 
           {stocks.map((stock) => (
@@ -69,16 +74,26 @@ export function TransactionModal({
           step={1}
           placeholder="Ej: 10"
           style={inputStyle}
+          data-cy="modal-quantity-input"
         />
 
-        {error && <p style={errorStyle}>{error}</p>}
+        {error && (
+          <p style={errorStyle} data-cy="modal-error">
+            {error}
+          </p>
+        )}
 
         <div style={actionsStyle}>
           <button type="button" onClick={onClose} style={cancelButton}>
             Cancelar
           </button>
 
-          <button type="submit" disabled={loading} style={submitButton}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={submitButton}
+            data-cy="modal-submit-button"
+          >
             {loading ? "Guardando..." : title}
           </button>
         </div>
@@ -88,7 +103,7 @@ export function TransactionModal({
 }
 
 const overlayStyle = {
-  position: "fixed",
+  position: "fixed" as const,
   inset: 0,
   background: "rgba(0,0,0,0.72)",
   zIndex: 100,
