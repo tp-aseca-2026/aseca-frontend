@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aseca.mobile.models.Stock
@@ -30,7 +32,11 @@ fun TransactionCard(
     val isBuy = transaction.type == "BUY"
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "transaction_${transaction.type}_${ticker}"
+            },
         color = Color(0xFF0C1017),
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(1.dp, AuthColors.Border),
@@ -47,6 +53,9 @@ fun TransactionCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "${if (isBuy) "Compra" else "Venta"} $ticker",
+                        modifier = Modifier.semantics {
+                            contentDescription = "transaction_ticker_${ticker}"
+                        },
                         color = AuthColors.PrimaryText,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
@@ -62,6 +71,9 @@ fun TransactionCard(
 
                 Text(
                     text = if (isBuy) "BUY" else "SELL",
+                    modifier = Modifier.semantics {
+                        contentDescription = "transaction_type_${transaction.type}_${ticker}"
+                    },
                     color = if (isBuy) AuthColors.Accent else AuthColors.Error,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,

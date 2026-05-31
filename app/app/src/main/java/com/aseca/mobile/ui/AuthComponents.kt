@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -83,6 +84,7 @@ fun AuthTextField(
     modifier: Modifier = Modifier,
     accessibilityId: String,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
     OutlinedTextField(
         value = value,
@@ -93,6 +95,7 @@ fun AuthTextField(
             .semantics { contentDescription = accessibilityId },
         singleLine = true,
         visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = AuthColors.PrimaryText,
             unfocusedTextColor = AuthColors.PrimaryText,
