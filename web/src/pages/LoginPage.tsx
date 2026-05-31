@@ -214,6 +214,7 @@ function AuthInput({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           required
+          autoComplete={type === "password" ? "current-password" : "off"}
           data-cy={dataCy}
           style={{
             width: "100%",
