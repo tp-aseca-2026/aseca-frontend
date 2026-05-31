@@ -7,13 +7,26 @@ class HomePage {
         return $('~logout_button');
     }
 
+    get updatePricesButton() {
+        return $('~prices_update_button');
+    }
+
+    get latestPricesTitle() {
+        return $('android=new UiSelector().text("Últimos precios")');
+    }
+
     async expectVisible() {
         await expect(this.dashboardTitle).toBeDisplayed();
         await expect(this.logoutButton).toBeDisplayed();
     }
 
-    async logout() {
-        await this.logoutButton.click();
+    async updatePrices() {
+        await this.updatePricesButton.waitForDisplayed({ timeout: 10000 });
+        await this.updatePricesButton.click();
+    }
+
+    async expectLatestPricesSection() {
+        await expect(this.latestPricesTitle).toBeDisplayed();
     }
 }
 
