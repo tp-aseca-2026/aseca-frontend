@@ -12,6 +12,9 @@ import com.aseca.mobile.ui.AuthStatusMessage
 import com.aseca.mobile.ui.AuthSubmitButton
 import com.aseca.mobile.ui.AuthTextField
 import com.aseca.mobile.viewmodel.RegisterViewModel
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 
 @Composable
 fun RegisterScreen(
@@ -29,6 +32,10 @@ fun RegisterScreen(
             onValueChange = viewModel::onEmailChange,
             label = "Email",
             accessibilityId = "register_email",
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next,
+            ),
         )
 
         AuthTextField(
@@ -37,6 +44,10 @@ fun RegisterScreen(
             label = "Password",
             accessibilityId = "register_password",
             visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done,
+            ),
         )
 
         AuthStatusMessage(
