@@ -59,6 +59,7 @@ async function handleSubmit(event: FormEvent) {
       <section style={{ width: "100%", maxWidth: 760 }}>
         <Link
           to="/"
+          data-cy="back-to-landing"
           style={{
             color: "#6b7280",
             textDecoration: "none",
@@ -278,6 +279,7 @@ async function handleSubmit(event: FormEvent) {
         <div style={{ textAlign: "center" }}>
           <Link
             to="/login"
+            data-cy="back-to-login"
             style={{
               color: "#00e676",
               fontSize: 20,

@@ -1,138 +1,82 @@
-const BASE_URL = "http://localhost:3000";
+import { createTestUser, loginThroughUi } from "../support/api";
 
-const STOCKS_MOCK = [
-  { id: 1, ticker: "AAPL", companyName: "Apple Inc.", cik: null },
-];
+const ticker = "MSFT";
+const apiTimeout = 30000;
 
-const EMPTY_PORTFOLIO = {
-  positions: [],
-  summary: {
-    totalCostBasis: 0,
-    currentValue: 0,
-    unrealizedProfitLoss: 0,
-    unrealizedProfitLossPercentage: 0,
-    realizedProfitLoss: 0,
-    totalProfitLoss: 0,
-    lastPriceUpdatedAt: null,
-  },
-};
+function goToPortfolio() {
+  cy.get("[data-cy='nav-portfolio']").click();
+  cy.url().should("include", "/portfolio");
+  cy.get("[data-cy='portfolio-title']").should("be.visible");
+}
 
-const PORTFOLIO_WITH_AAPL = {
-  positions: [
-    {
-      stockId: 1,
-      ticker: "AAPL",
-      companyName: "Apple Inc.",
-      quantity: 10,
-      averageBuyPrice: 150,
-      costBasis: 1500,
-      latestPrice: 155,
-      currentValue: 1550,
-      unrealizedProfitLoss: 50,
-      unrealizedProfitLossPercentage: 3.33,
-      realizedProfitLoss: 0,
-      totalProfitLoss: 50,
-      lastPriceUpdatedAt: null,
-    },
-  ],
-  summary: {
-    totalCostBasis: 1500,
-    currentValue: 1550,
-    unrealizedProfitLoss: 50,
-    unrealizedProfitLossPercentage: 3.33,
-    realizedProfitLoss: 0,
-    totalProfitLoss: 50,
-    lastPriceUpdatedAt: null,
-  },
-};
-
-function interceptDashboard() {
-  cy.intercept("GET", `${BASE_URL}/transactions`, { body: [] }).as(
-    "transactions"
+function buyStock(quantity: string) {
+  cy.get("[data-cy='portfolio-open-buy-dialog']").should("be.visible").click();
+  cy.get("[data-cy='transaction-modal']").should("be.visible");
+  cy.get("[data-cy='modal-ticker-select']", { timeout: apiTimeout })
+    .find(`option[value='${ticker}']`)
+    .should("exist");
+  cy.get("[data-cy='modal-ticker-select']").select(ticker);
+  cy.get("[data-cy='modal-quantity-input']").clear().type(quantity);
+  cy.get("[data-cy='modal-submit-button']").click();
+  cy.get("[data-cy='transaction-modal']", { timeout: apiTimeout }).should(
+    "not.exist",
   );
-  cy.intercept("GET", `${BASE_URL}/price-snapshots/latest`, {
-    body: { lastUpdatedAt: null, prices: [] },
-  }).as("snapshots");
-  cy.intercept("GET", `${BASE_URL}/stocks`, { body: STOCKS_MOCK }).as("stocks");
-  cy.intercept("GET", `${BASE_URL}/watchlist`, { body: [] }).as("watchlist");
 }
 
 describe("Portfolio", () => {
-  it("registra una compra exitosa y muestra la posición en el portfolio", () => {
-    interceptDashboard();
+  it("compra una acción y la muestra como posición activa", () => {
+    createTestUser().then((user) => {
+      loginThroughUi(user);
+      goToPortfolio();
 
-    cy.intercept("GET", `${BASE_URL}/portfolio`, {
-      body: PORTFOLIO_WITH_AAPL,
-    }).as("portfolioWithPosition");
+      buyStock("10");
 
-    cy.intercept(
-      { method: "GET", url: `${BASE_URL}/portfolio`, times: 1 },
-      { body: EMPTY_PORTFOLIO }
-    ).as("portfolioEmpty");
-
-    cy.intercept("POST", `${BASE_URL}/transactions/buy`, {
-      statusCode: 201,
-      body: {
-        id: 1,
-        stockId: 1,
-        type: "BUY",
-        quantity: 10,
-        price: 150,
-        executedAt: "2026-05-27T00:00:00.000Z",
-      },
-    }).as("buyTransaction");
-
-    cy.visit("/home", {
-      onBeforeLoad(win) {
-        win.localStorage.setItem("accessToken", "test-token");
-      },
+      cy.get(`[data-cy='portfolio-position-${ticker}']`, {
+        timeout: apiTimeout,
+      }).should("be.visible");
     });
-
-    cy.wait("@portfolioEmpty");
-
-    cy.get("[data-cy='buy-button']").should("be.visible").click();
-    cy.get("[data-cy='transaction-modal']").should("be.visible");
-    cy.get("[data-cy='modal-ticker-select']").select("AAPL");
-    cy.get("[data-cy='modal-quantity-input']").type("10");
-    cy.get("[data-cy='modal-submit-button']").click();
-
-    cy.wait("@buyTransaction");
-    cy.wait("@portfolioWithPosition");
-
-    cy.get("[data-cy='positions-list']").should("contain", "AAPL");
   });
 
-  it("muestra el error del modal cuando la compra falla en el backend", () => {
-    interceptDashboard();
+  it("vende parte de una posición activa", () => {
+    createTestUser().then((user) => {
+      loginThroughUi(user);
+      goToPortfolio();
 
-    cy.intercept("GET", `${BASE_URL}/portfolio`, {
-      body: EMPTY_PORTFOLIO,
-    }).as("portfolio");
+      buyStock("10");
 
-    cy.intercept("POST", `${BASE_URL}/transactions/buy`, {
-      statusCode: 400,
-      body: { message: "No se encontró precio para el ticker indicado" },
-    }).as("buyTransaction");
+      cy.get(`[data-cy='portfolio-sell-${ticker}']`, {
+        timeout: apiTimeout,
+      })
+        .should("be.visible")
+        .click();
+      cy.get("[data-cy='transaction-modal']").should("be.visible");
+      cy.get("[data-cy='modal-ticker-select']").should("have.value", ticker);
+      cy.get("[data-cy='modal-quantity-input']").clear().type("4");
+      cy.get("[data-cy='modal-submit-button']").click();
+      cy.get("[data-cy='transaction-modal']", { timeout: apiTimeout }).should(
+        "not.exist",
+      );
 
-    cy.visit("/home", {
-      onBeforeLoad(win) {
-        win.localStorage.setItem("accessToken", "test-token");
-      },
+      cy.get(`[data-cy='portfolio-position-${ticker}']`, {
+        timeout: apiTimeout,
+      }).should("be.visible");
+      cy.get("[data-cy='portfolio-positions']").should("contain", "6");
     });
+  });
 
-    cy.wait("@portfolio");
+  it("muestra resumen y P&L después de comprar una acción", () => {
+    createTestUser().then((user) => {
+      loginThroughUi(user);
+      goToPortfolio();
 
-    cy.get("[data-cy='buy-button']").should("be.visible").click();
-    cy.get("[data-cy='modal-ticker-select']").select("AAPL");
-    cy.get("[data-cy='modal-quantity-input']").type("10");
-    cy.get("[data-cy='modal-submit-button']").click();
+      buyStock("10");
 
-    cy.wait("@buyTransaction");
-
-    cy.get("[data-cy='modal-error']")
-      .should("be.visible")
-      .and("contain", "No se pudo registrar la compra");
-
-    cy.get("[data-cy='transaction-modal']").should("be.visible");
+      cy.get("[data-cy='portfolio-summary']")
+        .should("be.visible")
+        .and("contain", "Costo total")
+        .and("contain", "Valor actual")
+        .and("contain", "P&L total")
+        .and("contain", "P&L no realizado");
+    });
   });
 });

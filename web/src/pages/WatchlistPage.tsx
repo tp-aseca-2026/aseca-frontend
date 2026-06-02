@@ -37,7 +37,7 @@ export function WatchlistPage() {
       setItems(watchlistResult);
       setStocks(stocksResult);
 
-      await loadComparison();
+      void loadComparison();
     } catch (error) {
       console.error(error);
       setError("No pudimos cargar la watchlist.");
@@ -125,6 +125,7 @@ export function WatchlistPage() {
         </Link>
 
         <h1
+          data-cy="watchlist-title"
           style={{
             margin: "0 0 12px",
             fontSize: 52,
@@ -163,6 +164,7 @@ export function WatchlistPage() {
               value={selectedTicker}
               onChange={(event) => setSelectedTicker(event.target.value)}
               style={inputStyle}
+              data-cy="watchlist-stock-select"
             >
               <option value="">Seleccioná una acción</option>
 
@@ -177,12 +179,17 @@ export function WatchlistPage() {
               onClick={handleAdd}
               disabled={actionLoading}
               style={primaryButton}
+              data-cy="watchlist-add-button"
             >
               {actionLoading ? "Guardando..." : "+ Agregar"}
             </button>
           </div>
 
-          {error && <p style={errorStyle}>{error}</p>}
+          {error && (
+            <p style={errorStyle} data-cy="watchlist-error">
+              {error}
+            </p>
+          )}
         </section>
 
         <section
@@ -202,7 +209,7 @@ export function WatchlistPage() {
             <h2 style={{ margin: 0, fontSize: 22 }}>Empresas guardadas</h2>
           </div>
 
-          <div style={{ padding: 24 }}>
+          <div style={{ padding: 24 }} data-cy="watchlist-items-section">
             {loading ? (
               <p style={{ color: "#7b8495" }}>Cargando watchlist...</p>
             ) : items.length === 0 ? (
@@ -210,10 +217,11 @@ export function WatchlistPage() {
                 Todavía no agregaste empresas a tu watchlist.
               </p>
             ) : (
-              <div style={{ display: "grid", gap: 14 }}>
+              <div style={{ display: "grid", gap: 14 }} data-cy="watchlist-items">
                 {items.map((item) => (
                   <div
                     key={item.id}
+                    data-cy={`watchlist-item-${item.stock.ticker}`}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -244,6 +252,7 @@ export function WatchlistPage() {
                       onClick={() => handleRemove(item.stock.ticker)}
                       disabled={actionLoading}
                       style={dangerButton}
+                      data-cy={`watchlist-remove-${item.stock.ticker}`}
                     >
                       Eliminar
                     </button>
