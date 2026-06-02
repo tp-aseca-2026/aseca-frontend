@@ -174,6 +174,7 @@ export function EdgarPage() {
         </p>
 
         <h1
+          data-cy="edgar-title"
           style={{
             fontFamily: "Georgia, serif",
             fontSize: 58,
@@ -211,6 +212,7 @@ export function EdgarPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Ej: AAPL, Apple, Microsoft, Tesla"
+            data-cy="edgar-search-input"
             style={{
               flex: 1,
               height: 62,
@@ -227,6 +229,7 @@ export function EdgarPage() {
           <button
             type="submit"
             disabled={loadingSearch}
+            data-cy="edgar-search-button"
             style={{
               minWidth: 150,
               height: 62,
@@ -290,6 +293,7 @@ export function EdgarPage() {
               <button
                 key={company.cik}
                 onClick={() => handleSelectCompany(company)}
+                data-cy={`edgar-company-${company.ticker}`}
                 style={{
                   width: "100%",
                   textAlign: "left",
@@ -392,6 +396,7 @@ export function EdgarPage() {
                     <SectionTitle
                       title="Métricas financieras"
                       subtitle="Último dato reportado disponible por la empresa."
+                      dataCy="edgar-metrics-title"
                     />
 
                     <div
@@ -424,6 +429,7 @@ export function EdgarPage() {
                     <SectionTitle
                       title="Evolución histórica"
                       subtitle="Últimos puntos reportados para cada métrica financiera."
+                      dataCy="edgar-historical-title"
                     />
 
                     <div
@@ -582,13 +588,18 @@ function EmptyState() {
 function SectionTitle({
   title,
   subtitle,
+  dataCy,
 }: {
   title: string;
   subtitle: string;
+  dataCy?: string;
 }) {
   return (
     <div style={{ margin: "0 0 18px" }}>
-      <h3 style={{ margin: "0 0 6px", fontSize: 22, color: "#f3f6fb" }}>
+      <h3
+        style={{ margin: "0 0 6px", fontSize: 22, color: "#f3f6fb" }}
+        data-cy={dataCy}
+      >
         {title}
       </h3>
       <p style={{ margin: 0, color: "#788293", fontSize: 14 }}>

@@ -56,6 +56,7 @@ export function LoginPage() {
       <section style={{ width: "100%", maxWidth: 760 }}>
         <Link
           to="/"
+          data-cy="back-to-landing"
           style={{
             color: "#6b7280",
             textDecoration: "none",
@@ -155,6 +156,7 @@ export function LoginPage() {
         <div style={{ textAlign: "center" }}>
           <Link
             to="/register"
+            data-cy="go-to-register"
             style={{
               color: "#00e676",
               fontSize: 20,

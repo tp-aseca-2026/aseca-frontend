@@ -72,6 +72,7 @@ export function TransactionsPage() {
         </Link>
 
         <h1
+          data-cy="transactions-title"
           style={{
             margin: "0 0 32px",
             fontSize: 52,
@@ -109,6 +110,7 @@ export function TransactionsPage() {
                 return (
                   <div
                     key={transaction.id || index}
+                    data-cy={`transaction-${transaction.type ?? "OPERATION"}-${ticker}`}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",

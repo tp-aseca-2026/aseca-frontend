@@ -317,13 +317,42 @@ export function HomePage() {
                 fontWeight: 600,
               }}
             >
-              <span>Portfolio</span>
-              <span>Transacciones</span>
-              <span>Buscar empresa</span>
-              <span>Watchlist</span>
+              <button
+                type="button"
+                onClick={() => navigate("/portfolio")}
+                style={navButton}
+                data-cy="nav-portfolio"
+              >
+                Portfolio
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/transactions")}
+                style={navButton}
+                data-cy="nav-transactions"
+              >
+                Transacciones
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/edgar")}
+                style={navButton}
+                data-cy="nav-edgar"
+              >
+                Buscar empresa
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/watchlist")}
+                style={navButton}
+                data-cy="nav-watchlist"
+              >
+                Watchlist
+              </button>
 
               <button
                 onClick={logout}
+                data-cy="logout-button"
                 style={{
                   border: "1px solid #243044",
                   borderRadius: 12,
@@ -340,6 +369,7 @@ export function HomePage() {
           </header>
 
           <section
+            data-cy="home-dashboard"
             style={{
               display: "grid",
               gridTemplateColumns: "1.25fr 0.75fr",
@@ -668,13 +698,18 @@ export function HomePage() {
                     + Registrar compra
                   </button>
 
-                  <button style={quickButton} onClick={() => openSellModal()}>
+                  <button
+                    style={quickButton}
+                    onClick={() => openSellModal()}
+                    data-cy="sell-button"
+                  >
                     − Registrar venta
                   </button>
 
                   <button
                     style={quickButton}
                     onClick={() => navigate("/edgar")}
+                    data-cy="edgar-button"
                   >
                     Buscar empresa en EDGAR
                   </button>
@@ -682,6 +717,7 @@ export function HomePage() {
                     style={quickButton}
                     onClick={handleUpdatePrices}
                     disabled={updatingPrices}
+                    data-cy="update-prices-button"
                   >
                     {updatingPrices
                       ? "Actualizando precios..."
@@ -692,6 +728,7 @@ export function HomePage() {
 
               <div
                 onClick={() => navigate("/watchlist")}
+                data-cy="watchlist-card"
                 style={{
                   border: "1px solid #162235",
                   borderRadius: 28,
@@ -967,4 +1004,14 @@ const quickButton = {
   fontWeight: 800,
   cursor: "pointer",
   textAlign: "left" as const,
+};
+
+const navButton = {
+  border: "none",
+  background: "transparent",
+  color: "#7b8495",
+  padding: 0,
+  fontSize: 14,
+  fontWeight: 600,
+  cursor: "pointer",
 };

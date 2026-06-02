@@ -24,6 +24,7 @@ export function PortfolioPage() {
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
   const positions = portfolio?.positions ?? [];
+  const summary = portfolio?.summary;
 
   useEffect(() => {
     loadPortfolio();
@@ -115,6 +116,7 @@ export function PortfolioPage() {
           </Link>
 
           <h1
+            data-cy="portfolio-title"
             style={{
               margin: "0 0 32px",
               fontSize: 52,
@@ -124,6 +126,33 @@ export function PortfolioPage() {
           >
             Portfolio completo
           </h1>
+
+          <section
+            data-cy="portfolio-summary"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 18,
+              marginBottom: 28,
+            }}
+          >
+            <SummaryCard
+              title="Costo total"
+              value={money(summary?.totalCostBasis ?? 0)}
+            />
+            <SummaryCard
+              title="Valor actual"
+              value={money(summary?.currentValue ?? 0)}
+            />
+            <SummaryCard
+              title="P&L total"
+              value={money(summary?.totalProfitLoss ?? 0)}
+            />
+            <SummaryCard
+              title="P&L no realizado"
+              value={money(summary?.unrealizedProfitLoss ?? 0)}
+            />
+          </section>
 
           <section
             style={{
@@ -149,6 +178,7 @@ export function PortfolioPage() {
               <button
                 style={primaryButton}
                 onClick={() => openBuyModal()}
+                data-cy="portfolio-open-buy-dialog"
               >
                 + Registrar compra
               </button>
@@ -165,6 +195,7 @@ export function PortfolioPage() {
                 </p>
               ) : (
                 <table
+                  data-cy="portfolio-positions"
                   style={{
                     width: "100%",
                     borderCollapse: "collapse",
@@ -207,7 +238,10 @@ export function PortfolioPage() {
                       return (
                         <tr key={position.stockId}>
                           <td style={tdStyle}>
-                            <strong style={{ color: "#e8edf3" }}>
+                            <strong
+                              style={{ color: "#e8edf3" }}
+                              data-cy={`portfolio-position-${position.ticker}`}
+                            >
                               {position.ticker}
                             </strong>
 
@@ -255,6 +289,7 @@ export function PortfolioPage() {
                               onClick={() =>
                                 openBuyModal(position.ticker)
                               }
+                              data-cy={`portfolio-buy-more-${position.ticker}`}
                             >
                               Comprar más
                             </button>
@@ -264,6 +299,7 @@ export function PortfolioPage() {
                               onClick={() =>
                                 openSellModal(position.ticker)
                               }
+                              data-cy={`portfolio-sell-${position.ticker}`}
                             >
                               Vender
                             </button>
@@ -299,6 +335,33 @@ const tdStyle = {
   borderTop: "1px solid #162235",
   fontSize: 14,
 };
+
+function SummaryCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div
+      style={{
+        border: "1px solid #162235",
+        borderRadius: 22,
+        padding: 22,
+        background: "#0c1017",
+      }}
+    >
+      <p style={{ margin: "0 0 12px", color: "#536079", fontSize: 14 }}>
+        {title}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          color: "#e8edf3",
+          fontSize: 28,
+          fontWeight: 800,
+        }}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
 
 const primaryButton = {
   border: "none",
