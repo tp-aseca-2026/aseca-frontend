@@ -30,7 +30,11 @@ fun WatchlistCard(
     onRemove: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = false) {
+                contentDescription = "watchlist_item_${item.stock.ticker}"
+            },
         color = Color(0xFF0C1017),
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(1.dp, AuthColors.Border),
