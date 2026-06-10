@@ -51,6 +51,7 @@ export function HomePage() {
   const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+  const [lockedTicker, setLockedTicker] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
@@ -125,25 +126,28 @@ export function HomePage() {
     navigate("/login");
   }
 
-  function openBuyModal(defaultTicker = "") {
-    setTransactionMode("buy");
-    setSelectedTicker(defaultTicker);
-    setTransactionError(null);
-    setTransactionModalOpen(true);
-  }
+    function openBuyModal(defaultTicker = "", locked = false) {
+        setTransactionMode("buy");
+        setSelectedTicker(defaultTicker);
+        setLockedTicker(locked);
+        setTransactionError(null);
+        setTransactionModalOpen(true);
+    }
 
-  function openSellModal(defaultTicker = "") {
-    setTransactionMode("sell");
-    setSelectedTicker(defaultTicker);
-    setTransactionError(null);
-    setTransactionModalOpen(true);
-  }
+    function openSellModal(defaultTicker = "", locked = false) {
+        setTransactionMode("sell");
+        setSelectedTicker(defaultTicker);
+        setLockedTicker(locked);
+        setTransactionError(null);
+        setTransactionModalOpen(true);
+    }
 
-  function closeTransactionModal() {
-    setTransactionModalOpen(false);
-    setSelectedTicker("");
-    setTransactionError(null);
-  }
+    function closeTransactionModal() {
+        setTransactionModalOpen(false);
+        setSelectedTicker("");
+        setLockedTicker(false);
+        setTransactionError(null);
+    }
 
   async function handleTransactionSubmit(ticker: string, quantity: number) {
     if (!ticker) {
@@ -431,23 +435,6 @@ export function HomePage() {
                 Resumen de posiciones, precios almacenados, P&L y últimas
                 operaciones registradas.
               </p>
-
-              <p
-                style={{
-                  margin: "28px 0 0",
-                  color: "#536079",
-                  fontSize: 14,
-                }}
-              >
-                Última actualización de precios:{" "}
-                <span style={{ color: "#e8edf3", fontWeight: 700 }}>
-                  {summary?.lastPriceUpdatedAt
-                    ? new Date(summary.lastPriceUpdatedAt).toLocaleString(
-                        "es-AR",
-                      )
-                    : getSnapshotDate(snapshots)}
-                </span>
-              </p>
             </div>
 
             <div
@@ -649,13 +636,13 @@ export function HomePage() {
                             <td style={tdStyle}>
                               <button
                                 style={smallButton}
-                                onClick={() => openBuyModal(position.ticker)}
+                                onClick={() => openBuyModal(position.ticker, true)}
                               >
                                 Comprar más
                               </button>
                               <button
                                 style={smallGhostButton}
-                                onClick={() => openSellModal(position.ticker)}
+                                onClick={() => openSellModal(position.ticker, true)}
                               >
                                 Vender
                               </button>
@@ -723,6 +710,33 @@ export function HomePage() {
                       ? "Actualizando precios..."
                       : "Actualizar precios"}
                   </button>
+
+                    <div
+                        style={{
+                            marginTop: 10,
+                            padding: "10px 12px",
+                            borderRadius: 12,
+                            background: "rgba(0,230,118,0.05)",
+                            border: "1px solid rgba(0,230,118,0.12)",
+                            fontSize: 13,
+                        }}
+                    >
+                        <div style={{ color: "#536079" }}>
+                            Última actualización de precios
+                        </div>
+
+                        <div
+                            style={{
+                                color: "#00e676",
+                                fontWeight: 700,
+                                marginTop: 4,
+                            }}
+                        >
+                            {summary?.lastPriceUpdatedAt
+                                ? new Date(summary.lastPriceUpdatedAt).toLocaleString("es-AR")
+                                : getSnapshotDate(snapshots)}
+                        </div>
+                    </div>
                 </div>
               </div>
 
@@ -878,16 +892,17 @@ export function HomePage() {
           </section>
         </section>
       </main>
-      <TransactionModal
-        open={transactionModalOpen}
-        mode={transactionMode}
-        stocks={stocks}
-        defaultTicker={selectedTicker}
-        loading={transactionLoading}
-        error={transactionError}
-        onClose={closeTransactionModal}
-        onSubmit={handleTransactionSubmit}
-      />
+        <TransactionModal
+            open={transactionModalOpen}
+            mode={transactionMode}
+            stocks={stocks}
+            defaultTicker={selectedTicker}
+            lockedTicker={lockedTicker}
+            loading={transactionLoading}
+            error={transactionError}
+            onClose={closeTransactionModal}
+            onSubmit={handleTransactionSubmit}
+        />
     </>
   );
 }

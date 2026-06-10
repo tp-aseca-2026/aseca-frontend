@@ -3,12 +3,8 @@ class TransactionsPage {
         return $('android=new UiSelector().text("Historial de transacciones")');
     }
 
-    transactionTicker(ticker: string) {
-        return $(`~transaction_ticker_${ticker}`);
-    }
-
-    transactionType(type: 'BUY' | 'SELL', ticker: string) {
-        return $(`~transaction_type_${type}_${ticker}`);
+    transactionItem(type: 'BUY' | 'SELL', ticker: string) {
+        return $(`~transaction_item_${type}_${ticker}`);
     }
 
     async expectVisible() {
@@ -16,8 +12,9 @@ class TransactionsPage {
     }
 
     async expectBuyTransaction(ticker: string) {
-        await expect(this.transactionTicker(ticker)).toBeDisplayed();
-        await expect(this.transactionType('BUY', ticker)).toBeDisplayed();
+        const item = await this.transactionItem('BUY', ticker);
+        await item.waitForDisplayed({ timeout: 10000 });
+        await expect(item).toBeDisplayed();
     }
 }
 
