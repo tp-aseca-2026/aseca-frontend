@@ -11,8 +11,18 @@ class WatchlistPage {
         return $(`~watchlist_stock_choice_${ticker}`);
     }
 
+    watchlistItem(ticker: string) {
+        return $(`~watchlist_item_${ticker}`);
+    }
+
     removeButton(ticker: string) {
         return $(`~watchlist_remove_${ticker}`);
+    }
+
+    private async scrollToStock(ticker: string) {
+        await $(
+            `android=new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector().description("watchlist_item_${ticker}"))`
+        );
     }
 
     async expectVisible() {
@@ -29,12 +39,16 @@ class WatchlistPage {
     }
 
     async expectStockAdded(ticker: string) {
-        const removeButton = await this.removeButton(ticker);
-        await removeButton.waitForDisplayed({ timeout: 15000 });
-        await expect(removeButton).toBeDisplayed();
+        await this.scrollToStock(ticker);
+
+        const item = await this.watchlistItem(ticker);
+        await item.waitForDisplayed({ timeout: 10000 });
+        await expect(item).toBeDisplayed();
     }
 
     async removeStock(ticker: string) {
+        await this.scrollToStock(ticker);
+
         const remove = await this.removeButton(ticker);
         await remove.waitForDisplayed({ timeout: 10000 });
         await remove.click();

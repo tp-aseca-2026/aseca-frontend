@@ -35,7 +35,7 @@ fun TransactionCard(
         modifier = Modifier
             .fillMaxWidth()
             .semantics {
-                contentDescription = "transaction_${transaction.type}_${ticker}"
+                contentDescription = "transaction_item_${transaction.type}_${ticker}"
             },
         color = Color(0xFF0C1017),
         shape = RoundedCornerShape(18.dp),
@@ -53,13 +53,11 @@ fun TransactionCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "${if (isBuy) "Compra" else "Venta"} $ticker",
-                        modifier = Modifier.semantics {
-                            contentDescription = "transaction_ticker_${ticker}"
-                        },
                         color = AuthColors.PrimaryText,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
+
                     if (!companyName.isNullOrBlank()) {
                         Text(
                             text = companyName,
@@ -71,9 +69,6 @@ fun TransactionCard(
 
                 Text(
                     text = if (isBuy) "BUY" else "SELL",
-                    modifier = Modifier.semantics {
-                        contentDescription = "transaction_type_${transaction.type}_${ticker}"
-                    },
                     color = if (isBuy) AuthColors.Accent else AuthColors.Error,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
