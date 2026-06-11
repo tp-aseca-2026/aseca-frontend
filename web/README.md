@@ -86,8 +86,8 @@ La protección de rutas es por componente. `HomePage` verifica el token en `loca
 - Logout limpia el token y redirige a `/login`.
 
 **Dashboard (`/home`):**
-- Resumen del portfolio: valor actual, ganancia/pérdida, cantidad de posiciones.
-- Top 3 posiciones con acciones rápidas de compra y venta.
+- Resumen del portfolio: valor actual, P&L no realizado, cantidad de posiciones.
+- Top 3 posiciones con filas expandibles para ver detalle y acciones rápidas de compra y venta.
 - Card de watchlist resumida.
 - Últimas 3 transacciones.
 - Botón para actualizar precios de posiciones activas (`POST /price-snapshots/update`).
