@@ -1,0 +1,21 @@
+services:
+  app:
+    platform: linux/amd64
+    build:
+      context: .
+      target: dev
+    container_name: aseca-app
+    working_dir: /workspace
+    volumes:
+      - ./app:/workspace/app
+      - ./gradle:/workspace/gradle
+      - ./build.gradle.kts:/workspace/build.gradle.kts:ro
+      - ./settings.gradle.kts:/workspace/settings.gradle.kts:ro
+      - ./gradle.properties:/workspace/gradle.properties:ro
+      - ./gradlew:/workspace/gradlew:ro
+      - ./gradlew.bat:/workspace/gradlew.bat:ro
+      - aseca_app_gradle:/root/.gradle
+    command: ./gradlew :app:assembleDebug
+
+volumes:
+  aseca_app_gradle:
