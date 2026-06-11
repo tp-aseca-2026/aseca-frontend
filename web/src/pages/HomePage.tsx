@@ -595,7 +595,7 @@ export function HomePage() {
                     </thead>
 
                     <tbody>
-                      {positions.slice(0, 3).map((position) => {
+                      {positions.slice(0, 5).map((position) => {
                         const pnlPercent =
                           position.unrealizedProfitLossPercentage ?? 0;
                         const positive = pnlPercent >= 0;
