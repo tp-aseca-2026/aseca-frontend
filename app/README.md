@@ -159,7 +159,7 @@ npm install
 ### Ejecución
 
 ```bash
-npm test
+npm run wdio
 ```
 
 ### Suites Disponibles
