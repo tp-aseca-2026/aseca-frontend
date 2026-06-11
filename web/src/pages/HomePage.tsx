@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {Fragment, useEffect, useState} from "react";
 import { useNavigate } from "react-router";
 import { api } from "../api/axios";
 import { getPortfolio, type PortfolioResponse } from "../api/portfolio";
@@ -52,6 +52,9 @@ export function HomePage() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [lockedTicker, setLockedTicker] = useState(false);
+    const [expandedPositionId, setExpandedPositionId] = useState<number | null>(
+        null,
+    );
 
   const [loading, setLoading] = useState(true);
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
@@ -64,10 +67,10 @@ export function HomePage() {
   const summary = portfolio?.summary;
   const positions = portfolio?.positions ?? [];
 
-  const totalValue = summary?.currentValue ?? 0;
-  const totalPnL = summary?.totalProfitLoss ?? 0;
-  const totalPnLPercent = summary?.unrealizedProfitLossPercentage ?? 0;
-  const positiveTotalPnL = totalPnL >= 0;
+    const totalValue = summary?.currentValue ?? 0;
+    const totalPnL = summary?.unrealizedProfitLoss ?? 0;
+    const totalPnLPercent = summary?.unrealizedProfitLossPercentage ?? 0;
+    const positiveTotalPnL = totalPnL >= 0;
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -183,6 +186,12 @@ export function HomePage() {
       setTransactionLoading(false);
     }
   }
+
+    function togglePositionDetails(stockId: number) {
+        setExpandedPositionId((current) =>
+            current === stockId ? null : stockId,
+        );
+    }
 
   async function handleUpdatePrices() {
     try {
@@ -490,7 +499,7 @@ export function HomePage() {
                 </p>
                 <p style={{ margin: "6px 0 0", color: "#7b8495" }}>
                   {positiveTotalPnL ? "+" : ""}
-                  {totalPnLPercent.toFixed(2)}% total
+                    {totalPnLPercent.toFixed(2)}% no realizado
                 </p>
               </div>
             </div>
@@ -505,13 +514,11 @@ export function HomePage() {
             }}
           >
             <MetricCard title="Valor actual" value={money(totalValue)} />
-            <MetricCard
-              title="Ganancia / pérdida"
-              value={`${positiveTotalPnL ? "+" : ""}${totalPnLPercent.toFixed(
-                2,
-              )}%`}
-              positive={positiveTotalPnL}
-            />
+              <MetricCard
+                  title="P&L no realizado"
+                  value={`${positiveTotalPnL ? "+" : ""}${totalPnLPercent.toFixed(2)}%`}
+                  positive={positiveTotalPnL}
+              />
             <MetricCard
               title="Posiciones"
               value={`${positions.length}`}
@@ -562,14 +569,14 @@ export function HomePage() {
                   >
                     <thead>
                       <tr>
-                        {[
-                          "Ticker",
-                          "Cantidad",
-                          "Precio compra",
-                          "Precio actual",
-                          "P&L",
-                          "Acciones",
-                        ].map((header) => (
+                          {[
+                              "Ticker",
+                              "Cantidad",
+                              "Precio compra",
+                              "Precio actual",
+                              "P&L",
+                              "Acciones",
+                          ].map((header) => (
                           <th
                             key={header}
                             style={{
@@ -593,62 +600,160 @@ export function HomePage() {
                           position.unrealizedProfitLossPercentage ?? 0;
                         const positive = pnlPercent >= 0;
 
-                        return (
-                          <tr key={position.stockId}>
-                            <td style={tdStyle}>
-                              <strong style={{ color: "#e8edf3" }}>
-                                {position.ticker}
-                              </strong>
-                              <p
-                                style={{
-                                  margin: "4px 0 0",
-                                  color: "#536079",
-                                }}
-                              >
-                                {position.companyName ||
-                                  "Sin nombre registrado"}
-                              </p>
-                            </td>
+                          const isExpanded = expandedPositionId === position.stockId;
 
-                            <td style={tdStyle}>{position.quantity}</td>
+                          return (
+                              <Fragment key={position.stockId}>
+                                  <tr>
+                                      <td style={tdStyle}>
+                                          <div
+                                              style={{
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  gap: 8,
+                                                  marginBottom: 4,
+                                              }}
+                                          >
+                                              <button
+                                                  type="button"
+                                                  onClick={() => togglePositionDetails(position.stockId)}
+                                                  style={{
+                                                      border: "none",
+                                                      background: "transparent",
+                                                      color: "#7b8495",
+                                                      cursor: "pointer",
+                                                      fontSize: 14,
+                                                      padding: 0,
+                                                  }}
+                                              >
+                                                  {isExpanded ? "▾" : "▸"}
+                                              </button>
 
-                            <td style={tdStyle}>
-                              {money(position.averageBuyPrice)}
-                            </td>
+                                              <strong style={{ color: "#e8edf3" }}>
+                                                  {position.ticker}
+                                              </strong>
+                                          </div>
 
-                            <td style={tdStyle}>
-                              {position.latestPrice !== null
-                                ? money(position.latestPrice)
-                                : "Sin precio"}
-                            </td>
+                                          <p
+                                              style={{
+                                                  margin: 0,
+                                                  color: "#536079",
+                                              }}
+                                          >
+                                              {position.companyName || "Sin nombre registrado"}
+                                          </p>
+                                      </td>
 
-                            <td
-                              style={{
-                                ...tdStyle,
-                                color: positive ? "#00e676" : "#ff5370",
-                                fontWeight: 800,
-                              }}
-                            >
-                              {positive ? "+" : ""}
-                              {pnlPercent.toFixed(2)}%
-                            </td>
+                                      <td style={tdStyle}>{position.quantity}</td>
 
-                            <td style={tdStyle}>
-                              <button
-                                style={smallButton}
-                                onClick={() => openBuyModal(position.ticker, true)}
-                              >
-                                Comprar más
-                              </button>
-                              <button
-                                style={smallGhostButton}
-                                onClick={() => openSellModal(position.ticker, true)}
-                              >
-                                Vender
-                              </button>
-                            </td>
-                          </tr>
-                        );
+                                      <td style={tdStyle}>{money(position.averageBuyPrice)}</td>
+
+                                      <td style={tdStyle}>
+                                          {position.latestPrice !== null
+                                              ? money(position.latestPrice)
+                                              : "Sin precio"}
+                                      </td>
+
+                                      <td
+                                          style={{
+                                              ...tdStyle,
+                                              color: positive ? "#00e676" : "#ff5370",
+                                              fontWeight: 800,
+                                          }}
+                                      >
+                                          {positive ? "+" : ""}
+                                          {pnlPercent.toFixed(2)}%
+                                      </td>
+
+                                      <td style={tdStyle}>
+                                          <button
+                                              style={smallButton}
+                                              onClick={() => openBuyModal(position.ticker, true)}
+                                          >
+                                              Comprar más
+                                          </button>
+                                          <button
+                                              style={smallGhostButton}
+                                              onClick={() => openSellModal(position.ticker, true)}
+                                          >
+                                              Vender
+                                          </button>
+                                      </td>
+                                  </tr>
+
+                                  {isExpanded && (
+                                      <tr>
+                                          <td colSpan={6} style={{ ...tdStyle, paddingTop: 0 }}>
+                                              <div
+                                                  style={{
+                                                      display: "grid",
+                                                      gridTemplateColumns: "repeat(5, 1fr)",
+                                                      gap: 12,
+                                                      padding: 14,
+                                                      borderRadius: 14,
+                                                      background: "#060a0f",
+                                                      border: "1px solid #162235",
+                                                  }}
+                                              >
+                                                  <PositionDetail
+                                                      label="Costo base"
+                                                      value={money(position.costBasis)}
+                                                  />
+
+                                                  <PositionDetail
+                                                      label="Valor actual"
+                                                      value={
+                                                          position.currentValue !== null
+                                                              ? money(position.currentValue)
+                                                              : "Sin precio"
+                                                      }
+                                                  />
+
+                                                  <PositionDetail
+                                                      label="P&L no realizado"
+                                                      value={
+                                                          position.unrealizedProfitLoss !== null
+                                                              ? `${position.unrealizedProfitLoss >= 0 ? "+" : ""}${money(
+                                                                  position.unrealizedProfitLoss,
+                                                              )}`
+                                                              : "Sin precio"
+                                                      }
+                                                      positive={
+                                                          position.unrealizedProfitLoss !== null
+                                                              ? position.unrealizedProfitLoss >= 0
+                                                              : undefined
+                                                      }
+                                                  />
+
+                                                  <PositionDetail
+                                                      label="P&L realizado"
+                                                      value={`${position.realizedProfitLoss >= 0 ? "+" : ""}${money(
+                                                          position.realizedProfitLoss,
+                                                      )}`}
+                                                      positive={position.realizedProfitLoss >= 0}
+                                                  />
+
+                                                  <PositionDetail
+                                                      label="P&L total"
+                                                      value={
+                                                          position.totalProfitLoss !== null
+                                                              ? `${position.totalProfitLoss >= 0 ? "+" : ""}${money(
+                                                                  position.totalProfitLoss,
+                                                              )}`
+                                                              : "Sin precio"
+                                                      }
+                                                      positive={
+                                                          position.totalProfitLoss !== null
+                                                              ? position.totalProfitLoss >= 0
+                                                              : undefined
+                                                      }
+                                                  />
+                                              </div>
+                                          </td>
+                                      </tr>
+                                  )}
+                              </Fragment>
+                          );
                       })}
                     </tbody>
                   </table>
@@ -979,6 +1084,47 @@ function SectionHeader({
       )}
     </div>
   );
+}
+
+function PositionDetail({
+                            label,
+                            value,
+                            positive,
+                        }: {
+    label: string;
+    value: string;
+    positive?: boolean;
+}) {
+    return (
+        <div>
+            <p
+                style={{
+                    margin: "0 0 6px",
+                    color: "#536079",
+                    fontSize: 12,
+                    fontWeight: 700,
+                }}
+            >
+                {label}
+            </p>
+
+            <p
+                style={{
+                    margin: 0,
+                    color:
+                        positive === undefined
+                            ? "#e8edf3"
+                            : positive
+                                ? "#00e676"
+                                : "#ff5370",
+                    fontSize: 13,
+                    fontWeight: 800,
+                }}
+            >
+                {value}
+            </p>
+        </div>
+    );
 }
 
 const tdStyle = {
