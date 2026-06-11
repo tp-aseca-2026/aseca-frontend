@@ -123,6 +123,31 @@ Limpiar build:
 
 El APK de debug se genera en `app/app/build/outputs/apk/debug/`.
 
+## Docker
+
+Docker se usa para compilar la app y correr tests unitarios en un entorno reproducible. No reemplaza Android Studio, el emulador ni Appium, porque los E2E mobile necesitan controlar un dispositivo Android mediante ADB. Por eso se ejecuta como comando puntual de build/test, no como un servicio con `docker compose up`.
+
+Compilar APK de debug:
+
+```bash
+cd app
+docker compose run --rm app
+```
+
+Ejecutar tests unitarios:
+
+```bash
+docker compose run --rm app ./gradlew :app:testDebugUnitTest
+```
+
+Limpiar build:
+
+```bash
+docker compose run --rm app ./gradlew clean
+```
+
+El APK generado puede instalarse luego en el emulador local para ejecutar los tests de Appium.
+
 ## CI
 
 El workflow `.github/workflows/app-release.yml` corre en cada push a `main` que incluya cambios en `app/`:
