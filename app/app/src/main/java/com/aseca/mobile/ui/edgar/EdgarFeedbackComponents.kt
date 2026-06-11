@@ -1,6 +1,7 @@
 package com.aseca.mobile.ui.edgar
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aseca.mobile.models.EdgarFiling
@@ -22,6 +26,8 @@ import com.aseca.mobile.ui.AuthColors
 
 @Composable
 fun FilingCard(filing: EdgarFiling) {
+    val uriHandler = LocalUriHandler.current
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color(0xFF0C1017),
@@ -51,9 +57,13 @@ fun FilingCard(filing: EdgarFiling) {
                 )
             }
             Text(
-                text = filing.link,
-                color = AuthColors.MutedText,
+                text = "Ver filing SEC",
+                color = AuthColors.Accent,
                 style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clickable { uriHandler.openUri(filing.link) }
+                    .clearAndSetSemantics { contentDescription = "edgar_filing_link" },
             )
         }
     }
