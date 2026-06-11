@@ -17,8 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aseca.mobile.models.EdgarFiling
@@ -62,8 +62,8 @@ fun FilingCard(filing: EdgarFiling) {
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
-                    .semantics { contentDescription = "edgar_filing_link_${filing.accessionNumber}" }
-                    .clickable { uriHandler.openUri(filing.link) },
+                    .clickable { uriHandler.openUri(filing.link) }
+                    .clearAndSetSemantics { contentDescription = "edgar_filing_link" },
             )
         }
     }

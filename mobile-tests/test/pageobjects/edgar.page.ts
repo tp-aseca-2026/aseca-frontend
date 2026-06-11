@@ -21,6 +21,10 @@ class EdgarPage {
         return $('android=new UiSelector().text("Evolución histórica")');
     }
 
+    get filingLink() {
+        return $('~edgar_filing_link');
+    }
+
     async expectVisible() {
         await expect(this.title).toBeDisplayed();
     }
@@ -44,6 +48,26 @@ class EdgarPage {
         );
     }
 
+    async scrollToFilingLink() {
+        const { width, height } = await browser.getWindowSize();
+
+        // tuve que hacer un scroll mas largo porque no encontraba el link de filing
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+            if (await this.filingLink.isDisplayed().catch(() => false)) return;
+
+            await browser.execute('mobile: scrollGesture', {
+                left: Math.round(width * 0.1),
+                top: Math.round(height * 0.2),
+                width: Math.round(width * 0.8),
+                height: Math.round(height * 0.65),
+                direction: 'down',
+                percent: 0.85,
+            });
+
+            await browser.pause(300);
+        }
+    }
+
     async expectCompanyDetailsVisible() {
         await this.metricsTitle.waitForDisplayed({ timeout: 30000 });
         await expect(this.metricsTitle).toBeDisplayed();
@@ -51,6 +75,12 @@ class EdgarPage {
         await this.scrollToText('Evolución histórica');
         await this.historicalTitle.waitForDisplayed({ timeout: 10000 });
         await expect(this.historicalTitle).toBeDisplayed();
+    }
+
+    async openFirstFiling() {
+        await this.scrollToFilingLink();
+        await this.filingLink.waitForDisplayed({ timeout: 10000 });
+        await this.filingLink.click();
     }
 }
 
