@@ -1,16 +1,13 @@
-# ASECA Frontend Monorepo (estructura inicial)
+# ASECA Frontend Monorepo
 
-Este repositorio queda preparado para separar web y app:
+Frontend del TP Final de Aseguramiento de la Calidad de Software 2026. Portfolio tracker de acciones del mercado estadounidense con integración a datos financieros de SEC EDGAR.
 
-- `web/`: frontend actual en React + Vite.
-- `app/`: app Android base (Kotlin) preparada para evolucionar con MVVM.
+## Estructura
 
-## Uso actual
+| Directorio | Descripción | README |
+|---|---|---|
+| `web/` | SPA en React + Vite (frontend web) | [web/README.md](web/README.md) |
+| `app/` | App Android nativa en Kotlin + Jetpack Compose | [app/README.md](app/README.md) |
+| `mobile-tests/` | Tests E2E con WebdriverIO + Appium para la app Android | [app/README.md](app/README.md) |
 
-Todo lo del frontend web se ejecuta desde `web/`:
-
-```bash
-cd web
-npm install
-npm run dev
-```
+Ambas interfaces consumen el mismo backend REST. Ver [aseca-backend](https://github.com/tp-aseca-2026/aseca-backend) para instrucciones de levantarlo.
