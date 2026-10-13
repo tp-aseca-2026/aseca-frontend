@@ -70,6 +70,7 @@ export function LandingPage() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
+            gap: 56,
           }}
         >
           <header
@@ -129,7 +130,7 @@ export function LandingPage() {
               style={{
                 overflow: "hidden",
                 width: "100%",
-                marginBottom: 90,
+                marginBottom: 56,
                 WebkitMaskImage:
                   "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
                 maskImage:
@@ -230,7 +231,7 @@ export function LandingPage() {
                 style={{
                   display: "flex",
                   gap: 16,
-                  marginTop: 44,
+                  marginTop: 36,
                 }}
               >
                 <button
