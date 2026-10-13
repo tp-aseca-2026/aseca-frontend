@@ -7,6 +7,7 @@ import { EdgarPage } from "./pages/EdgarPage";
 import { WatchlistPage } from "./pages/WatchlistPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 function App() {
   return (
@@ -15,11 +16,13 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/edgar" element={<EdgarPage />} />
-        <Route path="/watchlist" element={<WatchlistPage />} />
-        <Route path="/transactions" element={<TransactionsPage />} />
-        <Route path="/portfolio" element={<PortfolioPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/edgar" element={<EdgarPage />} />
+          <Route path="/watchlist" element={<WatchlistPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
