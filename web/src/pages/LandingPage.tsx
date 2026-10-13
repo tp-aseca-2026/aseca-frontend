@@ -66,11 +66,11 @@ export function LandingPage() {
             position: "relative",
             zIndex: 1,
             minHeight: "100vh",
-            padding: "56px",
+            padding: "clamp(20px, 4vh, 56px) 56px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            gap: 56,
+            gap: "clamp(16px, 3.5vh, 56px)",
           }}
         >
           <header
@@ -120,7 +120,7 @@ export function LandingPage() {
                 letterSpacing: "0.22em",
                 fontSize: 12,
                 fontWeight: 700,
-                marginBottom: 22,
+                marginBottom: 16,
               }}
             >
               Mercado en tiempo real
@@ -130,7 +130,7 @@ export function LandingPage() {
               style={{
                 overflow: "hidden",
                 width: "100%",
-                marginBottom: 56,
+                marginBottom: "clamp(12px, 3.5vh, 56px)",
                 WebkitMaskImage:
                   "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
                 maskImage:
@@ -188,7 +188,7 @@ export function LandingPage() {
                   letterSpacing: "0.2em",
                   fontSize: 12,
                   fontWeight: 800,
-                  marginBottom: 24,
+                  margin: "0 0 16px",
                 }}
               >
                 Portfolio tracker
@@ -197,7 +197,7 @@ export function LandingPage() {
               <h1
                 style={{
                   fontFamily: "Georgia, serif",
-                  fontSize: "clamp(64px, 7vw, 104px)",
+                  fontSize: "clamp(36px, min(7vw, 8.5vh), 104px)",
                   lineHeight: 0.98,
                   fontWeight: 400,
                   letterSpacing: "-0.05em",
@@ -216,10 +216,10 @@ export function LandingPage() {
               <p
                 style={{
                   maxWidth: 560,
-                  marginTop: 30,
+                  margin: "clamp(12px, 2.5vh, 30px) 0 0",
                   color: "#7b8495",
                   fontSize: 18,
-                  lineHeight: 1.7,
+                  lineHeight: 1.6,
                 }}
               >
                 Armá tu portfolio, seguí tus acciones favoritas y consultá
@@ -231,7 +231,7 @@ export function LandingPage() {
                 style={{
                   display: "flex",
                   gap: 16,
-                  marginTop: 36,
+                  marginTop: "clamp(16px, 3.5vh, 44px)",
                 }}
               >
                 <button
@@ -276,7 +276,7 @@ export function LandingPage() {
               <p style={{ margin: 0, fontSize: 30, fontWeight: 800 }}>
                 <span style={{ color: "#00e676" }}>$</span>2.4B
               </p>
-              <p style={{ marginTop: 8, color: "#4a5568", fontSize: 13 }}>
+              <p style={{ margin: "8px 0 0", color: "#4a5568", fontSize: 13 }}>
                 Volumen gestionado
               </p>
             </div>
@@ -285,7 +285,7 @@ export function LandingPage() {
               <p style={{ margin: 0, fontSize: 30, fontWeight: 800 }}>
                 8K<span style={{ color: "#00e676" }}>+</span>
               </p>
-              <p style={{ marginTop: 8, color: "#4a5568", fontSize: 13 }}>
+              <p style={{ margin: "8px 0 0", color: "#4a5568", fontSize: 13 }}>
                 Tickers disponibles
               </p>
             </div>
@@ -294,7 +294,7 @@ export function LandingPage() {
               <p style={{ margin: 0, fontSize: 30, fontWeight: 800 }}>
                 SEC<span style={{ color: "#00e676" }}>.</span>
               </p>
-              <p style={{ marginTop: 8, color: "#4a5568", fontSize: 13 }}>
+              <p style={{ margin: "8px 0 0", color: "#4a5568", fontSize: 13 }}>
                 Datos EDGAR en vivo
               </p>
             </div>
